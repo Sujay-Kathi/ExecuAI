@@ -1,0 +1,83 @@
+"""
+SQLAlchemy ORM models for the enterprise assistant.
+
+== ASSIGNMENT ==
+  - Backend developer: add/modify columns as needed.
+  - Feature devs (HR / Employee modules): extend with new tables if required.
+"""
+from sqlalchemy import Column, Integer, String, DateTime, Enum, ForeignKey, Text
+from sqlalchemy.orm import relationship
+from datetime import datetime, timezone
+from backend.database import Base
+
+
+class Employee(Base):
+    """Core employee record."""
+    __tablename__ = "employees"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(100), nullable=False)
+    email = Column(String(150), unique=True, nullable=False)
+    role = Column(String(100), nullable=False)
+    department = Column(String(100), default="General")
+    date_joined = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    leave_requests = relationship("LeaveRequest", back_populates="employee")
+
+    def __repr__(self):
+        return f"<Employee {self.name} ({self.role})>"
+
+
+class LeaveRequest(Base):
+    """Leave management records."""
+    __tablename__ = "leave_requests"
+
+    id = Column(Integer, primary_key=True, index=True)
+    employee_id = Column(Integer, ForeignKey("employees.id"), nullable=False)
+    leave_type = Column(String(50), nullable=False)           # sick, casual, earned
+    start_date = Column(DateTime, nullable=False)
+    end_date = Column(DateTime, nullable=False)
+    reason = Column(Text, default="")
+    status = Column(
+        String(20),
+        default="pending"       # pending | approved | rejected
+    )
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    employee = relationship("Employee", back_populates="leave_requests")
+
+
+class Meeting(Base):
+    """Meeting / calendar entries."""
+    __tablename__ = "meetings"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String(200), nullable=False)
+    organizer_id = Column(Integer, ForeignKey("employees.id"), nullable=False)
+    scheduled_at = Column(DateTime, nullable=False)
+    duration_minutes = Column(Integer, default=30)
+    description = Column(Text, default="")
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+
+class ExecutionLog(Base):
+    """Stores the step-by-step execution logs shown in the UI."""
+    __tablename__ = "execution_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    request_text = Column(Text, nullable=False)
+    steps_json = Column(Text, nullable=False)       # JSON array of step dicts
+    result_summary = Column(Text, default="")
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+
+class AccessRequest(Base):
+    """IT Admin — tracks system access requests (grant / revoke)."""
+    __tablename__ = "access_requests"
+
+    id = Column(Integer, primary_key=True, index=True)
+    employee_id = Column(Integer, ForeignKey("employees.id"), nullable=False)
+    system_name = Column(String(100), nullable=False)     # e.g. "Jira", "AWS Console"
+    access_type = Column(String(50), default="read")      # read | write | admin
+    status = Column(String(20), default="pending")        # pending | granted | denied
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))

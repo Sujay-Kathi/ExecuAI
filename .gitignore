@@ -1,0 +1,28 @@
+# ── Python ──────────────────────────
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pkl
+*.db
+
+# ── Environment ─────────────────────
+.env
+
+# ── Data ────────────────────────────
+data/*.csv
+data/*.db
+
+# ── Node / Frontend ─────────────────
+frontend/node_modules/
+frontend/dist/
+
+# ── IDE ─────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ── OS ──────────────────────────────
+Thumbs.db
+.DS_Store
