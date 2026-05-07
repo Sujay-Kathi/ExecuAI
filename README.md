@@ -1,293 +1,195 @@
-# 🏢 Intelligent Enterprise Assistant
+# 🏢 ExecuAI
 
-> An Agentic AI System for Autonomous Workflow Automation
+> **An Agentic AI System for Autonomous Workflow Automation**
+
+[![Python Version](https://img.shields.io/badge/Python-3.14+-blue.svg)](https://python.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.136+-009688.svg?logo=fastapi)](https://fastapi.tiangolo.com)
+[![React](https://img.shields.io/badge/React-18+-61DAFB.svg?logo=react)](https://reactjs.org/)
+[![Vite](https://img.shields.io/badge/Vite-Latest-646CFF.svg?logo=vite)](https://vitejs.dev/)
+[![Scikit-learn](https://img.shields.io/badge/Scikit--Learn-1.8+-F7931E.svg?logo=scikit-learn)](https://scikit-learn.org/)
+
+ExecuAI is an intelligent enterprise assistant that doesn't just answer questions—it acts. By leveraging Agentic AI, it understands user intents, plans out execution steps, and autonomously interacts with enterprise systems to automate workflows like onboarding, leave management, and meeting scheduling.
 
 ---
 
 ## 📁 Project Structure
 
-```
-agentic-chatbot/
+The codebase is organized into distinct modules, making it easy for different teams to collaborate:
+
+```text
+ExecuAI/
 ├── backend/                       # FastAPI backend
-│   ├── main.py                    # App entry-point — integrates all modules
-│   ├── config.py                  # Env vars & app settings
+│   ├── main.py                    # App entry-point (integrates all routers)
+│   ├── config.py                  # Environment & app settings
 │   ├── database.py                # SQLAlchemy engine & session
-│   ├── models.py                  # All ORM models (shared)
+│   ├── models.py                  # ORM models (shared)
 │   ├── schemas.py                 # Pydantic schemas (shared)
 │   │
-│   ├── employee/                  # 👨‍💻 Employee module
-│   │   ├── __init__.py
-│   │   ├── routes.py              # /api/employee/* endpoints
-│   │   └── schemas.py             # Employee-specific schemas
-│   │
-│   ├── hr/                        # 👩‍💼 HR module
-│   │   ├── __init__.py
-│   │   ├── routes.py              # /api/hr/* endpoints
-│   │   └── schemas.py             # HR-specific schemas
-│   │
-│   ├── it_admin/                  # 🛠️ IT Admin module
-│   │   ├── __init__.py
-│   │   ├── routes.py              # /api/it/* endpoints
-│   │   └── schemas.py             # IT-specific schemas
-│   │
-│   ├── routes_chat.py             # /api/chat/* (shared — agent)
-│   ├── routes_ml.py               # /api/ml/*   (shared — predictions)
-│   ├── routes_employees.py        # Legacy CRUD (backward compat)
-│   ├── routes_leaves.py           # Legacy CRUD (backward compat)
-│   └── routes_meetings.py         # Legacy CRUD (backward compat)
+│   ├── employee/                  # 👨‍💻 Employee module (/api/employee/*)
+│   ├── hr/                        # 👩‍💼 HR module (/api/hr/*)
+│   └── it_admin/                  # 🛠️ IT Admin module (/api/it/*)
 │
-├── agent/                         # 🤖 AI Agent logic
-│   ├── agent.py                   # AgentController — Understand→Plan→Execute→Respond
-│   └── tools.py                   # Tool registry (callable functions)
-│
-├── ml/                            # 📊 Machine Learning
-│   ├── train_model.py             # Training script (Random Forest)
-│   ├── predictor.py               # Prediction utility class
-│   └── model.pkl                  # Trained model (generated, not committed)
-│
-├── data/                          # Datasets & database
-│   ├── README.md                  # Dataset download instructions
-│   ├── attrition_dataset.csv      # IBM HR dataset (download separately)
-│   └── enterprise.db              # SQLite DB (auto-created on startup)
-│
+├── agent/                         # 🤖 AI Agent logic (AgentController & Tools)
+├── ml/                            # 📊 Machine Learning (Attrition Prediction)
+├── data/                          # Datasets & SQLite database
 ├── frontend/                      # 🎨 React + Vite frontend
-│   ├── src/                       # React source code
-│   ├── public/                    # Static assets
-│   ├── package.json               # Node dependencies
-│   └── vite.config.js             # Vite configuration
-│
 ├── .env.example                   # Environment variable template
 ├── .gitignore                     # Git ignore rules
-├── requirements.txt               # Python dependencies
-└── context.txt                    # Project specification document
+└── requirements.txt               # Python dependencies
 ```
 
 ---
 
 ## 🚀 Quick Start
 
-### 1. Clone & activate virtual environment
+### 1. Clone & Set Up Virtual Environment
 
 ```bash
-git clone <repo-url>
-cd "agentic chatbot"
+git clone https://github.com/Sujay-Kathi/ExecuAI.git
+cd ExecuAI
 
-# Activate existing venv (Windows):
+# Activate existing virtual environment (Windows):
 .venv\Scripts\activate
 ```
 
-### 2. Install Python dependencies
+### 2. Install Dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 3. Configure environment
+### 3. Configure Environment Variables
 
 ```bash
-copy .env.example .env
-# Edit .env → add your OPENAI_API_KEY
+cp .env.example .env
+# Open .env and add your OPENAI_API_KEY
 ```
 
-### 4. Start the backend
+### 4. Run the Backend (FastAPI)
 
 ```bash
-# From project root:
 uvicorn backend.main:app --reload
-# API runs at http://127.0.0.1:8000
-# Docs at    http://127.0.0.1:8000/docs
+# API Base URL: http://127.0.0.1:8000
+# Swagger Docs: http://127.0.0.1:8000/docs
 ```
 
-### 5. Start the frontend
+### 5. Run the Frontend (React + Vite)
 
 ```bash
 cd frontend
-npm install   # (already done)
+npm install
 npm run dev
-# UI runs at http://localhost:5173
+# UI URL: http://localhost:5173
 ```
 
 ---
 
 ## 👥 Team Roles & Assignments
 
-### 🤖 AI Engineer — `agent/`
-| File | Task |
-|------|------|
-| `agent/agent.py` | Implement LLM calls in `_understand()` and `_plan()` using OpenAI API |
-| `agent/tools.py` | Wire tool functions to actual backend endpoints / external APIs |
-| **Branch:** `feature/agent-logic` | |
+We have divided the backend and AI components into logical boundaries for feature development:
 
----
+### 🤖 AI Engineer (`agent/`)
+- **Focus:** LLM logic (`agent.py`) and tool integrations (`tools.py`).
+- **Branch:** `feature/agent-logic`
 
-### 🔧 Backend Developer — `backend/` (core)
-| File | Task |
-|------|------|
-| `backend/models.py` | Extend DB models if needed |
-| `backend/schemas.py` | Keep schemas in sync with models |
-| `backend/database.py` | Optimise DB queries if needed |
-| `backend/main.py` | Integrate new routers as modules grow |
-| **Branch:** `feature/backend-api` | |
-
----
+### 🔧 Backend Developer (`backend/`)
+- **Focus:** Core DB models, schemas, and API integration.
+- **Branch:** `feature/backend-api`
 
 ### 👨‍💻 Feature Dev — Employee Module (`backend/employee/`)
-| File | Task |
-|------|------|
-| `backend/employee/routes.py` | Apply leave, schedule meetings, view profile, request access |
-| `backend/employee/schemas.py` | Add employee-specific request/response models |
-| **Branch:** `feature/employee-module` | |
-
-**Endpoints:**
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/api/employee/profile/{id}` | View own profile |
-| `POST` | `/api/employee/leave` | Apply for leave |
-| `GET` | `/api/employee/leave/{id}` | View own leave history |
-| `POST` | `/api/employee/meeting` | Schedule a meeting |
-| `GET` | `/api/employee/meetings/{id}` | View own meetings |
-| `GET` | `/api/employee/info/{id}` | Get salary, role, policies |
-
----
+- **Focus:** Leave applications, meeting scheduling, profile viewing.
+- **Branch:** `feature/employee-module`
 
 ### 👩‍💼 Feature Dev — HR Module (`backend/hr/`)
-| File | Task |
-|------|------|
-| `backend/hr/routes.py` | Onboard employees, approve leave, workforce insights |
-| `backend/hr/schemas.py` | Add HR-specific request/response models |
-| **Branch:** `feature/hr-module` | |
-
-**Endpoints:**
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/api/hr/onboard` | Full onboarding workflow |
-| `GET` | `/api/hr/employees` | List all employees |
-| `GET` | `/api/hr/leaves` | List all leave requests |
-| `PATCH` | `/api/hr/leaves/{id}` | Approve / reject leave |
-| `GET` | `/api/hr/insights` | Workforce analytics |
-
----
+- **Focus:** Employee onboarding, leave approvals, workforce insights.
+- **Branch:** `feature/hr-module`
 
 ### 🛠️ Feature Dev — IT Admin Module (`backend/it_admin/`)
-| File | Task |
-|------|------|
-| `backend/it_admin/routes.py` | Manage access, handle system requests, monitor health |
-| `backend/it_admin/schemas.py` | Add IT-specific request/response models |
-| **Branch:** `feature/it-module` | |
+- **Focus:** System access management, system requests, health monitoring.
+- **Branch:** `feature/it-module`
 
-**Endpoints:**
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/api/it/access` | Request system access |
-| `GET` | `/api/it/access` | List access requests |
-| `PATCH` | `/api/it/access/{id}` | Grant / deny access |
-| `POST` | `/api/it/system-request` | Submit IT request |
-| `GET` | `/api/it/health` | System health status |
+### 🎨 Frontend Developer (`frontend/`)
+- **Focus:** Chat Panel, Execution Log Panel, and Dashboard UI.
+- **Branch:** `feature/frontend-ui`
 
----
-
-### 🎨 Frontend Developer — `frontend/`
-| File | Task |
-|------|------|
-| `frontend/src/` | Build Chat Panel, Execution Log Panel, Dashboard |
-| Connect to API | Use `http://127.0.0.1:8000/api/` endpoints |
-| **Branch:** `feature/frontend-ui` | |
-
----
-
-### 📊 ML Engineer — `ml/`
-| File | Task |
-|------|------|
-| `data/` | Download IBM HR Attrition dataset → `data/attrition_dataset.csv` |
-| `ml/train_model.py` | Uncomment training pipeline, train model, save `model.pkl` |
-| `ml/predictor.py` | Verify feature order matches training |
-| `backend/routes_ml.py` | Replace stub with real `predictor.predict()` call |
-| **Branch:** `feature/ml-model` | |
-
----
+### 📊 ML Engineer (`ml/`)
+- **Focus:** Attrition prediction model using the IBM HR Analytics dataset.
+- **Branch:** `feature/ml-model`
 
 ### 🔗 Integration Lead
-| Task |
-|------|
-| Merge all feature branches into `dev` |
-| End-to-end testing of the full workflow |
-| Wire agent tools to real external APIs |
-| **Branch:** `dev` → `main` |
+- **Focus:** Merging branches to `dev` and deploying to `main`.
 
 ---
 
 ## 🌿 Git Workflow
 
-```
-main              ← final, stable code
-  └── dev         ← integration branch
-       ├── feature/agent-logic
-       ├── feature/backend-api
-       ├── feature/employee-module
-       ├── feature/hr-module
-       ├── feature/it-module
-       ├── feature/frontend-ui
-       └── feature/ml-model
+We follow a structured branching strategy:
+
+```mermaid
+graph LR
+  A[main] -->|branch| B(dev)
+  B -->|branch| C(feature/*)
+  C -->|PR| B
+  B -->|Merge after testing| A
 ```
 
 **Rules:**
-1. Never push directly to `main`.
-2. Create your feature branch from `main`.
-3. Open a PR to `dev` when your feature is ready.
-4. Integration Lead merges `dev` → `main` after testing.
+1. **Never** push directly to `main`.
+2. Always create your feature branch from `main`.
+3. Open a Pull Request (PR) to `dev` when your feature is ready.
+4. The Integration Lead merges `dev` → `main` after successful end-to-end testing.
 
 ---
 
 ## 📡 Full API Reference
 
-### Shared Endpoints
+### 🌐 Shared Endpoints
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | `GET` | `/` | Health check |
-| `POST` | `/api/chat/` | Send message to agent |
+| `POST` | `/api/chat/` | Send message to AI agent |
 | `POST` | `/api/ml/predict-attrition` | Predict employee attrition |
 
-### Employee Endpoints (`/api/employee/*`)
+### 👨‍💻 Employee (`/api/employee/*`)
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `GET` | `/api/employee/profile/{id}` | View profile |
-| `POST` | `/api/employee/leave` | Apply for leave |
-| `GET` | `/api/employee/leave/{id}` | View leave history |
-| `POST` | `/api/employee/meeting` | Schedule meeting |
-| `GET` | `/api/employee/meetings/{id}` | View meetings |
-| `GET` | `/api/employee/info/{id}` | Get info |
+| `GET` | `/profile/{id}` | View profile |
+| `POST` | `/leave` | Apply for leave |
+| `GET` | `/leave/{id}` | View leave history |
+| `POST` | `/meeting` | Schedule meeting |
+| `GET` | `/meetings/{id}` | View scheduled meetings |
+| `GET` | `/info/{id}` | Get salary, role & policies |
 
-### HR Endpoints (`/api/hr/*`)
+### 👩‍💼 HR (`/api/hr/*`)
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `POST` | `/api/hr/onboard` | Onboard employee |
-| `GET` | `/api/hr/employees` | List all employees |
-| `GET` | `/api/hr/leaves` | List leave requests |
-| `PATCH` | `/api/hr/leaves/{id}` | Approve/reject leave |
-| `GET` | `/api/hr/insights` | Workforce analytics |
+| `POST` | `/onboard` | Onboard new employee |
+| `GET` | `/employees` | List all employees |
+| `GET` | `/leaves` | List all leave requests |
+| `PATCH` | `/leaves/{id}` | Approve/reject leave |
+| `GET` | `/insights` | Workforce analytics |
 
-### IT Admin Endpoints (`/api/it/*`)
+### 🛠️ IT Admin (`/api/it/*`)
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `POST` | `/api/it/access` | Request access |
-| `GET` | `/api/it/access` | List requests |
-| `PATCH` | `/api/it/access/{id}` | Grant/deny access |
-| `POST` | `/api/it/system-request` | Submit IT request |
-| `GET` | `/api/it/health` | System health |
+| `POST` | `/access` | Request system access |
+| `GET` | `/access` | List access requests |
+| `PATCH` | `/access/{id}` | Grant/deny access |
+| `POST` | `/system-request`| Submit IT request |
+| `GET` | `/health` | System health |
 
 ---
 
 ## ⚙️ Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| LLM | OpenAI API |
-| Backend | Python, FastAPI, SQLAlchemy |
-| Frontend | React, Vite |
-| Database | SQLite |
-| ML | scikit-learn (Random Forest) |
-| Version Control | GitHub |
+| Component | Technology |
+|-----------|------------|
+| **LLM Engine** | OpenAI API |
+| **Backend** | Python, FastAPI, SQLAlchemy |
+| **Frontend** | React, Vite |
+| **Database** | SQLite (for development) |
+| **Machine Learning**| Scikit-learn (Random Forest) |
+| **Version Control** | Git & GitHub |
 
 ---
-#   E x e c u A I  
- 
+*Built to transform traditional chatbots into intelligent enterprise agents.*
