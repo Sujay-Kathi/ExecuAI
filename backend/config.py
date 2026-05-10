@@ -10,8 +10,9 @@ load_dotenv()
 # --- Database ---
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./data/enterprise.db")
 
-# --- OpenAI ---
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+# --- NVIDIA NIM ---
+NVIDIA_API_KEY = os.getenv("NVIDIA_API_KEY", "")
+NVIDIA_MODEL = os.getenv("NVIDIA_MODEL", "meta/llama-3.1-70b-instruct")
 
 # --- App ---
 APP_TITLE = "Intelligent Enterprise Assistant"

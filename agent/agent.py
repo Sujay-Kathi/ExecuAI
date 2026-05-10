@@ -11,7 +11,7 @@ The agent:
   5. Chains workflows when rules match (e.g., onboard → IT provisioning)
   6. Returns structured output with execution steps + human-readable result
 
-Can optionally enhance responses with OpenAI/GPT if an API key is configured.
+Can optionally enhance responses with NVIDIA NIM LLM if an API key is configured.
 """
 import json
 import time
@@ -22,14 +22,15 @@ from agent.intent import classify_intent, extract_entities
 from agent.workflows import WORKFLOW_MAP, CHAIN_RULES
 from agent.tools import TOOL_REGISTRY
 
-# Optional: OpenAI for enhanced natural-language responses
+# Optional: NVIDIA NIM for enhanced natural-language responses
 try:
     from openai import OpenAI
-    from backend.config import OPENAI_API_KEY
-    _HAS_OPENAI = bool(OPENAI_API_KEY and OPENAI_API_KEY != "your-openai-api-key-here")
+    from backend.config import NVIDIA_API_KEY, NVIDIA_MODEL
+    _HAS_LLM = bool(NVIDIA_API_KEY and NVIDIA_API_KEY != "your-nvidia-api-key-here")
 except Exception:
-    _HAS_OPENAI = False
-    OPENAI_API_KEY = ""
+    _HAS_LLM = False
+    NVIDIA_API_KEY = ""
+    NVIDIA_MODEL = ""
 
 
 class AgentController:
@@ -43,7 +44,15 @@ class AgentController:
 
     def __init__(self):
         self.tools = TOOL_REGISTRY
-        self.client = OpenAI(api_key=OPENAI_API_KEY) if _HAS_OPENAI else None
+        if _HAS_LLM:
+            self.llm = OpenAI(
+                base_url="https://integrate.api.nvidia.com/v1",
+                api_key=NVIDIA_API_KEY,
+            )
+            self.model = NVIDIA_MODEL or "meta/llama-3.1-70b-instruct"
+        else:
+            self.llm = None
+            self.model = None
 
     # ── Public entry point ──────────────────────────────────
 
@@ -204,9 +213,11 @@ class AgentController:
         # Build result summary
         result = self._generate_result_summary(intent, entities, execution)
 
-        # Optionally enhance with GPT
-        if self.client and intent != "general":
-            result = self._enhance_with_llm(result, intent, entities) or result
+        # Optionally enhance with NVIDIA NIM LLM
+        if self.llm and intent != "general":
+            enhanced = self._enhance_with_nim(result, intent, entities)
+            if enhanced:
+                result = enhanced
 
         # Collect detailed tool outputs
         tool_outputs = {}
@@ -226,6 +237,35 @@ class AgentController:
             "message": result,
             "steps_executed": steps,
         }
+
+    def _enhance_with_nim(self, summary: str, intent: str, entities: dict) -> Optional[str]:
+        """Use NVIDIA NIM to polish the result into more natural language."""
+        try:
+            response = self.llm.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {
+                        "role": "system",
+                        "content": (
+                            "You are ExecuAI, an enterprise AI assistant. "
+                            "Rewrite the following action summary into a concise, "
+                            "professional, and friendly response. Keep it under 3 sentences. "
+                            "Do NOT add information that wasn't in the original."
+                        ),
+                    },
+                    {
+                        "role": "user",
+                        "content": f"Intent: {intent}\nEntities: {json.dumps(entities, default=str)}\nSummary: {summary}",
+                    },
+                ],
+                temperature=0.4,
+                max_tokens=256,
+            )
+            return response.choices[0].message.content.strip()
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).warning(f"NIM enhance failed: {e}")
+            return None
 
     def _generate_result_summary(self, intent: str, entities: dict, execution: list) -> str:
         """Generate a human-readable result summary based on intent and entities."""
