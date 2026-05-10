@@ -81,3 +81,19 @@ class AccessRequest(Base):
     access_type = Column(String(50), default="read")      # read | write | admin
     status = Column(String(20), default="pending")        # pending | granted | denied
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+
+class ITTicket(Base):
+    """IT support tickets created by users or the agent."""
+    __tablename__ = "it_tickets"
+
+    id = Column(Integer, primary_key=True, index=True)
+    ticket_id = Column(String(20), unique=True, nullable=False)   # e.g. "IT-4821"
+    title = Column(String(200), nullable=False)
+    description = Column(Text, default="")
+    category = Column(String(100), default="General IT")
+    priority = Column(String(20), default="medium")               # low | medium | high | critical
+    status = Column(String(20), default="open")                   # open | in_progress | resolved | closed
+    assigned_team = Column(String(100), default="General IT Support")
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    resolved_at = Column(DateTime, nullable=True)

@@ -1,132 +1,299 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import './App.css';
 
 function App() {
   const [messages, setMessages] = useState([
-    { role: 'ai', text: 'Hello! I am your Enterprise AI Assistant. How can I help you today?' }
+    { role: 'ai', text: 'Hello! I am **ExecuAI** — your Enterprise AI Assistant. Try commands like:\n\n• "Onboard Rahul as Software Engineer"\n• "Schedule meeting about Sprint Planning"\n• "Give access to GitHub for Priya"\n• "Apply for sick leave"\n• "System status"\n• "Reset password for Amit"' }
   ]);
   const [input, setInput] = useState('');
-  const [executionLog, setExecutionLog] = useState([
-    { step: 1, action: 'Understand Intent', status: 'pending' },
-    { step: 2, action: 'Plan Execution', status: 'pending' },
-    { step: 3, action: 'Execute Actions', status: 'pending' },
-    { step: 4, action: 'Respond', status: 'pending' }
-  ]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [executionSteps, setExecutionSteps] = useState([]);
+  const [currentIntent, setCurrentIntent] = useState(null);
+  const [executionTime, setExecutionTime] = useState(null);
+  const [activeStep, setActiveStep] = useState(-1);
+  const chatEndRef = useRef(null);
+  const inputRef = useRef(null);
+
+  // Auto-scroll chat
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  // Animate execution steps one by one
+  useEffect(() => {
+    if (isLoading && executionSteps.length > 0 && activeStep < executionSteps.length - 1) {
+      const timer = setTimeout(() => {
+        setActiveStep(prev => prev + 1);
+      }, 400);
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading, activeStep, executionSteps]);
 
   const handleSend = async () => {
-    if (!input.trim()) return;
-    
-    const newMsg = { role: 'user', text: input };
-    setMessages([...messages, newMsg]);
-    const currentInput = input;
-    setInput('');
+    if (!input.trim() || isLoading) return;
 
-    setExecutionLog([
-      { step: 1, action: 'Understand Intent', status: 'active' },
-      { step: 2, action: 'Plan Execution', status: 'pending' },
-      { step: 3, action: 'Execute Actions', status: 'pending' },
-      { step: 4, action: 'Respond', status: 'pending' }
+    const userMessage = input.trim();
+    setMessages(prev => [...prev, { role: 'user', text: userMessage }]);
+    setInput('');
+    setIsLoading(true);
+    setExecutionSteps([]);
+    setCurrentIntent(null);
+    setExecutionTime(null);
+    setActiveStep(-1);
+
+    // Show "thinking" steps
+    setExecutionSteps([
+      '🔍 Analyzing your request...',
+      '🧠 Classifying intent...',
+      '📋 Building execution plan...',
     ]);
+    setActiveStep(0);
 
     try {
-      const res = await fetch('http://localhost:8000/api/chat', {
+      const res = await fetch('http://localhost:8000/api/chat/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: currentInput })
+        body: JSON.stringify({ message: userMessage })
       });
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      
-      setExecutionLog([
-        { step: 1, action: 'Understand Intent', status: 'done' },
-        { step: 2, action: 'Plan Execution', status: 'done' },
-        { step: 3, action: 'Execute Actions', status: 'done' },
-        { step: 4, action: 'Respond', status: 'done' }
-      ]);
-      setMessages(msgs => [...msgs, { role: 'ai', text: data.message || 'Request processed successfully. Actions executed.' }]);
+
+      // Update with real execution steps
+      setExecutionSteps(data.execution_log || []);
+      setCurrentIntent(data.intent || null);
+      setExecutionTime(data.execution_time || null);
+      setActiveStep(data.execution_log?.length || 0);
+      setIsLoading(false);
+
+      setMessages(prev => [...prev, {
+        role: 'ai',
+        text: data.reply || 'Request processed successfully.',
+        intent: data.intent,
+        entities: data.entities,
+      }]);
+
     } catch (err) {
-      setMessages(msgs => [...msgs, { role: 'ai', text: 'Error connecting to the AI agent.' }]);
-      setExecutionLog(logs => logs.map(l => ({ ...l, status: 'pending' })));
+      setIsLoading(false);
+      setExecutionSteps(['❌ Connection failed']);
+      setActiveStep(0);
+      setMessages(prev => [...prev, {
+        role: 'ai',
+        text: `⚠️ Error connecting to the AI agent: ${err.message}. Make sure the backend is running on port 8000.`
+      }]);
     }
+  };
+
+  const quickActions = [
+    { label: '👤 Onboard Employee', prompt: 'Onboard Rahul as Software Engineer in Engineering' },
+    { label: '🔑 Reset Password', prompt: 'Reset password for Amit' },
+    { label: '📅 Schedule Meeting', prompt: 'Schedule meeting about Sprint Planning' },
+    { label: '🏥 Apply Leave', prompt: 'Apply for sick leave from tomorrow' },
+    { label: '🔐 Grant Access', prompt: 'Give access to GitHub for Priya' },
+    { label: '🔧 Report Issue', prompt: 'Slack is not working, keeps crashing' },
+    { label: '📊 Attrition Risk', prompt: 'Who is likely to leave the company?' },
+    { label: '💚 System Health', prompt: 'Check system status' },
+  ];
+
+  const formatMessage = (text) => {
+    // Simple markdown-lite: bold, line breaks, bullets
+    return text
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\n/g, '<br/>')
+      .replace(/• /g, '<span class="bullet">•</span> ');
+  };
+
+  const intentLabels = {
+    employee_onboarding: { label: 'Onboarding', color: '#1edce0' },
+    it_provisioning: { label: 'IT Provisioning', color: '#d7a4ff' },
+    access_management: { label: 'Access Mgmt', color: '#f5b041' },
+    leave_request: { label: 'Leave Request', color: '#82e0aa' },
+    meeting_scheduling: { label: 'Meeting', color: '#85c1e9' },
+    it_ticket: { label: 'IT Ticket', color: '#ffb4ab' },
+    password_reset: { label: 'Password Reset', color: '#f9e79f' },
+    attrition_prediction: { label: 'ML Prediction', color: '#c39bd3' },
+    notification: { label: 'Notification', color: '#abebc6' },
+    system_health: { label: 'System Health', color: '#76d7c4' },
+    general: { label: 'General', color: '#8b90a0' },
   };
 
   return (
     <div className="dashboard-container">
       {/* Top Navbar */}
       <nav className="top-nav">
-        <h1>ExecuAI <span className="subtitle">Enterprise Assistant</span></h1>
-        <div className="user-profile">
+        <div className="nav-left">
+          <div className="logo-icon">⚡</div>
+          <h1>ExecuAI <span className="subtitle">Enterprise Assistant</span></h1>
+        </div>
+        <div className="nav-right">
+          {currentIntent && intentLabels[currentIntent] && (
+            <div
+              className="intent-badge"
+              style={{ borderColor: intentLabels[currentIntent].color, color: intentLabels[currentIntent].color }}
+            >
+              {intentLabels[currentIntent].label}
+            </div>
+          )}
           <div className="avatar">HR</div>
         </div>
       </nav>
 
       <main className="main-layout">
         {/* Left: Chat Panel */}
-        <section className="glass-card chat-panel">
+        <section className="glass-card chat-panel" id="chat-panel">
           <div className="card-header">
             <h2>AI Assistant</h2>
-            <div className="pulse-dot"></div>
+            <div className={`status-indicator ${isLoading ? 'processing' : 'idle'}`}>
+              <div className="pulse-dot"></div>
+              <span>{isLoading ? 'Processing...' : 'Ready'}</span>
+            </div>
           </div>
-          <div className="chat-history">
+
+          <div className="chat-history" id="chat-history">
             {messages.map((m, i) => (
-              <div key={i} className={`chat-bubble ${m.role}`}>
-                {m.text}
+              <div key={i} className={`chat-bubble ${m.role} ${m.role === 'ai' ? 'fade-in' : ''}`}>
+                {m.intent && intentLabels[m.intent] && (
+                  <span
+                    className="msg-intent-tag"
+                    style={{ background: intentLabels[m.intent].color + '22', color: intentLabels[m.intent].color }}
+                  >
+                    {intentLabels[m.intent].label}
+                  </span>
+                )}
+                <span dangerouslySetInnerHTML={{ __html: formatMessage(m.text) }} />
               </div>
             ))}
+            {isLoading && (
+              <div className="chat-bubble ai typing-indicator">
+                <span className="dot"></span>
+                <span className="dot"></span>
+                <span className="dot"></span>
+              </div>
+            )}
+            <div ref={chatEndRef} />
           </div>
+
+          {/* Quick Actions */}
+          <div className="quick-actions" id="quick-actions">
+            {quickActions.map((qa, i) => (
+              <button
+                key={i}
+                className="quick-btn"
+                onClick={() => { setInput(qa.prompt); inputRef.current?.focus(); }}
+                disabled={isLoading}
+              >
+                {qa.label}
+              </button>
+            ))}
+          </div>
+
           <div className="chat-input-area">
-            <input 
-              type="text" 
-              placeholder="E.g., Onboard Rahul as Software Engineer..." 
+            <input
+              ref={inputRef}
+              id="chat-input"
+              type="text"
+              placeholder="E.g., Onboard Rahul as Software Engineer..."
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleSend()}
+              disabled={isLoading}
             />
-            <button className="primary-btn" onClick={handleSend}>Send</button>
+            <button className="primary-btn" onClick={handleSend} disabled={isLoading} id="send-btn">
+              {isLoading ? '⏳' : 'Send'}
+            </button>
           </div>
         </section>
 
-        {/* Center: Execution Log Panel */}
-        <section className="glass-card execution-panel">
+        {/* Center: Dynamic Execution Log Panel */}
+        <section className="glass-card execution-panel" id="execution-panel">
           <div className="card-header">
-            <h2>Execution Log</h2>
+            <h2>Execution Pipeline</h2>
+            {executionTime !== null && (
+              <span className="exec-time">{executionTime.toFixed(2)}s</span>
+            )}
           </div>
-          <div className="timeline">
-            {executionLog.map((log, i) => (
-              <div key={i} className={`timeline-item ${log.status}`}>
-                <div className="timeline-marker">
-                  {log.status === 'done' && '✓'}
-                  {log.status === 'active' && <div className="active-dot"></div>}
-                </div>
-                <div className="timeline-content">
-                  <h4>{log.action}</h4>
-                  <p>Step {log.step}</p>
-                </div>
+          <div className="timeline" id="execution-timeline">
+            {executionSteps.length === 0 ? (
+              <div className="empty-state">
+                <div className="empty-icon">🚀</div>
+                <p>Send a message to see the agent's execution pipeline</p>
               </div>
-            ))}
+            ) : (
+              executionSteps.map((step, i) => {
+                const isDone = i <= activeStep;
+                const isActive = i === activeStep && isLoading;
+                const statusClass = isDone ? 'done' : isActive ? 'active' : 'pending';
+                const icon = step.startsWith('✅') ? '✅' :
+                             step.startsWith('❌') ? '❌' :
+                             step.startsWith('⏭️') ? '⏭️' :
+                             step.startsWith('🔍') || step.startsWith('🧠') || step.startsWith('📋') ? step.charAt(0) + step.charAt(1) :
+                             isDone ? '✓' : '';
+                const cleanStep = step.replace(/^[✅❌⏭️🔍🧠📋]\s*/, '');
+
+                return (
+                  <div key={i} className={`timeline-item ${statusClass}`} style={{ animationDelay: `${i * 0.08}s` }}>
+                    <div className="timeline-marker">
+                      {isActive ? <div className="active-dot"></div> :
+                       isDone ? <span className="check-mark">{icon || '✓'}</span> :
+                       <span className="step-num">{i + 1}</span>}
+                    </div>
+                    <div className="timeline-content">
+                      <h4>{cleanStep}</h4>
+                      <p>Step {i + 1} of {executionSteps.length}</p>
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
         </section>
 
-        {/* Right: Dashboard Data */}
-        <section className="data-panel">
+        {/* Right: Dashboard Stats */}
+        <section className="data-panel" id="stats-panel">
           <div className="glass-card stat-card">
-            <h3>Total Headcount</h3>
-            <div className="stat-value">1,204</div>
-            <div className="trend positive">↑ 12 this month</div>
+            <h3>Agent Capabilities</h3>
+            <div className="stat-value accent-teal">10</div>
+            <div className="trend positive">Workflows active</div>
           </div>
-          
+
           <div className="glass-card stat-card">
-            <h3>Pending Leaves</h3>
-            <div className="stat-value warning">8</div>
-            <div className="progress-bar">
-              <div className="progress-fill warning-fill" style={{ width: '40%' }}></div>
+            <h3>Current Intent</h3>
+            <div className="intent-display">
+              {currentIntent ? (
+                <span
+                  className="intent-pill"
+                  style={{
+                    background: (intentLabels[currentIntent]?.color || '#8b90a0') + '22',
+                    color: intentLabels[currentIntent]?.color || '#8b90a0',
+                    borderColor: (intentLabels[currentIntent]?.color || '#8b90a0') + '44',
+                  }}
+                >
+                  {intentLabels[currentIntent]?.label || currentIntent}
+                </span>
+              ) : (
+                <span className="intent-pill idle-pill">Awaiting input</span>
+              )}
             </div>
           </div>
-          
+
           <div className="glass-card stat-card">
-            <h3>System Access Requests</h3>
-            <div className="stat-value">3</div>
+            <h3>Steps Executed</h3>
+            <div className="stat-value">{executionSteps.filter((_, i) => i <= activeStep).length}</div>
             <div className="progress-bar">
-              <div className="progress-fill info-fill" style={{ width: '15%' }}></div>
+              <div
+                className="progress-fill info-fill"
+                style={{ width: executionSteps.length ? `${((activeStep + 1) / executionSteps.length) * 100}%` : '0%' }}
+              ></div>
+            </div>
+          </div>
+
+          <div className="glass-card stat-card">
+            <h3>Execution Time</h3>
+            <div className="stat-value accent-purple">
+              {executionTime !== null ? `${executionTime.toFixed(2)}s` : '—'}
+            </div>
+            <div className="trend positive">
+              {executionTime !== null && executionTime < 1 ? '⚡ Blazing fast' : executionTime !== null ? '✓ Completed' : 'Waiting...'}
             </div>
           </div>
         </section>
