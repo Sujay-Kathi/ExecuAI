@@ -89,20 +89,48 @@ def send_real_email(to: str, subject: str, body: str) -> dict | None:
 # ────────────────────────────────────────────────────────────
 
 def _get_calendar_service():
-    """Build a Google Calendar v3 service using a service-account JSON."""
+    """
+    Build a Google Calendar v3 service.
+    Supports both OAuth 2.0 user tokens and service-account JSON.
+    Auto-detects the credential type from the file contents.
+    """
     creds_path = os.getenv("GOOGLE_CREDENTIALS_PATH", "")
     if not creds_path or not os.path.exists(creds_path):
         return None
 
     try:
-        from google.oauth2 import service_account
         from googleapiclient.discovery import build
 
         SCOPES = ["https://www.googleapis.com/auth/calendar"]
-        creds = service_account.Credentials.from_service_account_file(
-            creds_path, scopes=SCOPES
-        )
+
+        # Read JSON to detect type
+        with open(creds_path, "r") as f:
+            cred_data = json.load(f)
+
+        # OAuth 2.0 user token (from setup_google_auth.py)
+        if "refresh_token" in cred_data or "token" in cred_data:
+            from google.oauth2.credentials import Credentials
+            from google.auth.transport.requests import Request
+
+            creds = Credentials.from_authorized_user_file(creds_path, SCOPES)
+            if creds and creds.expired and creds.refresh_token:
+                creds.refresh(Request())
+                # Save refreshed token
+                with open(creds_path, "w") as f:
+                    f.write(creds.to_json())
+
+        # Service account JSON
+        elif "type" in cred_data and cred_data["type"] == "service_account":
+            from google.oauth2 import service_account
+            creds = service_account.Credentials.from_service_account_file(
+                creds_path, scopes=SCOPES
+            )
+        else:
+            logger.warning("Unrecognized Google credentials format")
+            return None
+
         return build("calendar", "v3", credentials=creds, cache_discovery=False)
+
     except Exception as e:
         logger.warning(f"Google Calendar init failed: {e}")
         return None
