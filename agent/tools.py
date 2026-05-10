@@ -116,18 +116,30 @@ def assign_role(name: str, role: str, department: str) -> dict:
 
 def provision_it_systems(name: str) -> dict:
     """Provision all standard IT systems for a new employee."""
+    from agent.integrations import send_slack_message
+
     systems = ["Email", "Slack", "GitHub", "Jira", "Google Workspace", "VPN"]
+
+    # Try real Slack notification
+    slack_result = send_slack_message(
+        f":wave: *New Employee Provisioned:* {name}\n"
+        f"Systems: {', '.join(systems)}\n"
+        f"Status: All {len(systems)} systems configured :white_check_mark:"
+    )
+
     return {
         "tool": "provision_it_systems",
         "status": "success",
         "name": name,
         "systems_provisioned": systems,
         "message": f"All {len(systems)} systems provisioned for {name}",
+        "real_slack": slack_result is not None,
     }
 
 
 def grant_system_access(name: str, system: str) -> dict:
     """Grant access to a specific system for an employee."""
+    # DB record
     try:
         from backend.database import SessionLocal
         from backend.models import Employee, AccessRequest
@@ -147,6 +159,12 @@ def grant_system_access(name: str, system: str) -> dict:
     except Exception:
         pass
 
+    # Try real GitHub if the system is GitHub
+    real_api = None
+    if system.lower() in ("github", "git"):
+        from agent.integrations import invite_to_github_org
+        real_api = invite_to_github_org(name.lower().replace(" ", "-"))
+
     return {
         "tool": "grant_system_access",
         "status": "success",
@@ -154,6 +172,7 @@ def grant_system_access(name: str, system: str) -> dict:
         "system": system,
         "access_level": "write",
         "message": f"{name} granted access to {system}",
+        "real_api": real_api is not None,
     }
 
 
@@ -186,8 +205,21 @@ def validate_access_eligibility(name: str, system: str) -> dict:
 # ────────────────────────────────────────────────────────────
 
 def schedule_meeting(title: str, organizer: str = "System") -> dict:
-    """Schedule a meeting or orientation session."""
+    """Schedule a meeting — tries Google Calendar first, then DB fallback."""
+    from agent.integrations import create_real_calendar_event
+
     meeting_time = datetime.now(timezone.utc) + timedelta(days=random.randint(1, 5))
+
+    # Try real Google Calendar
+    gcal = create_real_calendar_event(
+        title=title,
+        description=f"Scheduled by {organizer} via ExecuAI",
+        start_time=meeting_time,
+        duration_minutes=30,
+    )
+
+    # Always persist in local DB too
+    meeting_id = None
     try:
         from backend.database import SessionLocal
         from backend.models import Meeting, Employee
@@ -206,27 +238,38 @@ def schedule_meeting(title: str, organizer: str = "System") -> dict:
         db.commit()
         meeting_id = meeting.id
         db.close()
-        return {
-            "tool": "schedule_meeting",
-            "status": "success",
-            "meeting_id": meeting_id,
-            "title": title,
-            "scheduled_at": meeting_time.isoformat(),
-        }
     except Exception:
         pass
 
-    return {
+    result = {
         "tool": "schedule_meeting",
         "status": "success",
         "title": title,
         "scheduled_at": meeting_time.isoformat(),
         "organizer": organizer,
+        "real_calendar": gcal is not None,
     }
+    if meeting_id:
+        result["meeting_id"] = meeting_id
+    if gcal:
+        result["calendar_link"] = gcal.get("link", "")
+    return result
 
 
 def check_availability(name: str) -> dict:
-    """Check calendar availability for a person."""
+    """Check calendar availability — tries Google Calendar freebusy first."""
+    from agent.integrations import check_real_availability
+
+    real = check_real_availability()
+    if real:
+        return {
+            "tool": "check_availability",
+            "status": "success",
+            "name": name,
+            "busy_slots": real["busy_slots"],
+            "method": "Google Calendar API",
+        }
+
     return {
         "tool": "check_availability",
         "status": "success",
@@ -255,13 +298,27 @@ def resolve_conflicts(title: str) -> dict:
 # ────────────────────────────────────────────────────────────
 
 def send_notification_email(to: str, subject: str, body: str) -> dict:
-    """Send an email notification (simulated — would use SMTP/Gmail API)."""
+    """Send an email — tries real Gmail SMTP first, then simulation fallback."""
+    from agent.integrations import send_real_email
+
+    real = send_real_email(to=to, subject=subject, body=body)
+    if real:
+        return {
+            "tool": "send_notification_email",
+            "status": "success",
+            "to": to,
+            "subject": subject,
+            "message": f"Real email sent to {to}: '{subject}'",
+            "method": "Gmail SMTP",
+        }
+
     return {
         "tool": "send_notification_email",
         "status": "success",
         "to": to,
         "subject": subject,
         "message": f"Email sent to {to}: '{subject}'",
+        "method": "Simulated (set SMTP_EMAIL & SMTP_APP_PASSWORD for real emails)",
     }
 
 
