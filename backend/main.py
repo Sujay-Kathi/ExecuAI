@@ -29,9 +29,7 @@ from backend.routes_chat import router as chat_router
 from backend.routes_ml import router as ml_router
 
 # ── Legacy routers (kept for backward compat, can be removed later) ──
-from backend.routes_employees import router as employees_router
-from backend.routes_leaves import router as leaves_router
-from backend.routes_meetings import router as meetings_router
+# (Removed)
 
 # ── Create app ───────────────────────────────────────
 app = FastAPI(title=APP_TITLE, version=APP_VERSION)
@@ -55,9 +53,7 @@ app.include_router(chat_router)
 app.include_router(ml_router)
 
 # ── Register legacy routers ─────────────────────────
-app.include_router(employees_router)
-app.include_router(leaves_router)
-app.include_router(meetings_router)
+# (Removed)
 
 
 # ── Startup event ───────────────────────────────────

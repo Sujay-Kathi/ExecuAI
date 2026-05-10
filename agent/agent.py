@@ -1,14 +1,11 @@
 """
 Agent Controller — the "brain" of the agentic system.
 Follows the  Understand → Plan → Execute → Respond  loop.
-
-== ASSIGNMENT: AI Engineer ==
-  - Replace the stub logic with actual LLM calls (OpenAI API).
-  - Use the TOOL_REGISTRY from agent/tools.py to execute planned steps.
-  - Log every step in the execution_log for UI transparency.
 """
+import json
+from openai import OpenAI
+from backend.config import OPENAI_API_KEY
 from agent.tools import TOOL_REGISTRY
-
 
 class AgentController:
     """
@@ -21,8 +18,7 @@ class AgentController:
 
     def __init__(self):
         self.tools = TOOL_REGISTRY
-
-    # ── Public API ───────────────────────────────────
+        self.client = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY and OPENAI_API_KEY != "your-openai-api-key-here" else None
 
     def process_request(self, user_request: str) -> dict:
         """Entry-point called by the /api/chat route."""
@@ -31,39 +27,70 @@ class AgentController:
         results = self._execute(plan)
         return self._respond(results)
 
-    # ── Private steps ────────────────────────────────
-
     def _understand(self, text: str) -> dict:
-        """
-        Step 1 — Understand user intent.
-        TODO: AI Engineer — call OpenAI to classify intent & extract entities.
-        """
-        return {"raw_text": text, "intent": "general", "entities": {}}
+        """Step 1 — Understand user intent."""
+        if not self.client:
+            return {"raw_text": text, "intent": "mock_intent (no API key)", "entities": {}}
+        try:
+            response = self.client.chat.completions.create(
+                model="gpt-4o",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "You are an enterprise AI assistant intent classifier. Classify the user's intent based on their request. Output JSON with 'intent' and 'entities' (key-value pairs)."
+                    },
+                    {"role": "user", "content": text}
+                ],
+                response_format={"type": "json_object"}
+            )
+            data = json.loads(response.choices[0].message.content)
+            return {
+                "raw_text": text,
+                "intent": data.get("intent", "general"),
+                "entities": data.get("entities", {})
+            }
+        except Exception as e:
+            return {"raw_text": text, "intent": "error", "entities": {}, "error": str(e)}
 
     def _plan(self, intent: dict) -> list:
-        """
-        Step 2 — Break intent into ordered tool calls.
-        TODO: AI Engineer — use LLM to generate a plan based on intent.
-        """
-        return [
-            {"step": 1, "action": "Task identified", "tool": None},
-            {"step": 2, "action": "Steps planned", "tool": None},
-            {"step": 3, "action": "Actions executed", "tool": None},
-            {"step": 4, "action": "Result generated", "tool": None},
-        ]
+        """Step 2 — Break intent into ordered tool calls."""
+        if not self.client or "mock_intent" in intent.get("intent", "") or intent.get("intent") == "error":
+            return [
+                {"step": 1, "action": "Task identified", "tool": None, "args": {}},
+                {"step": 2, "action": "Steps planned", "tool": None, "args": {}},
+                {"step": 3, "action": "Actions executed", "tool": None, "args": {}},
+                {"step": 4, "action": "Result generated", "tool": None, "args": {}},
+            ]
+        
+        try:
+            prompt = f"Given the intent '{intent['intent']}' and entities {intent['entities']}, generate an execution plan using available tools: {list(self.tools.keys())}. Output JSON with a 'plan' array, where each item has 'step', 'action' (description), 'tool' (tool name or null), and 'args' (dictionary of args mapping to tool parameters)."
+            response = self.client.chat.completions.create(
+                model="gpt-4o",
+                messages=[
+                    {"role": "system", "content": "You are a planning AI. Always output valid JSON."},
+                    {"role": "user", "content": prompt}
+                ],
+                response_format={"type": "json_object"}
+            )
+            data = json.loads(response.choices[0].message.content)
+            return data.get("plan", [])
+        except Exception as e:
+            return [{"step": 1, "action": f"Error planning: {str(e)}", "tool": None, "args": {}}]
 
     def _execute(self, plan: list) -> list:
-        """
-        Step 3 — Execute each step, calling tools where needed.
-        TODO: AI Engineer — invoke tools from TOOL_REGISTRY per plan.
-        """
+        """Step 3 — Execute each step, calling tools where needed."""
         executed = []
         for step in plan:
             tool_name = step.get("tool")
+            args = step.get("args", {})
             if tool_name and tool_name in self.tools:
-                # result = self.tools[tool_name](**step.get("args", {}))
-                pass
-            executed.append(f"✔ {step['action']}")
+                try:
+                    result = self.tools[tool_name](**args)
+                    executed.append(f"✔ Executed {tool_name}: {result}")
+                except Exception as e:
+                    executed.append(f"❌ Failed {tool_name}: {str(e)}")
+            else:
+                executed.append(f"✔ {step.get('action', 'Unknown action')}")
         return executed
 
     def _respond(self, executed_steps: list) -> dict:
