@@ -203,22 +203,23 @@ def _extract_name(text: str, intent: str) -> Optional[str]:
     # Pattern: "onboard <Name>", "provision <Name>", etc.
     # Capture one or more capitalized words, but stop at stop-words.
     for keyword in ("onboard", "provision", "hire", "setup system for",
-                    "give access to", "grant access to", "grant", "remind",
+                    "give access to", "grant access to", "grant", "remind", "tell",
+                    "to", "with", "for", "message",
                     "reset password for", "employee"):
-        pattern = rf"(?i){keyword}\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)"
+        # Match words following the keyword
+        pattern = rf"(?i){keyword}\s+([\w\s]+)"
         match = re.search(pattern, text)
         if match:
-            raw = match.group(1).strip()
-            # Trim at the first stop-word
+            captured = match.group(1).strip()
+            words = captured.split()
             name_parts = []
-            for part in raw.split():
-                if part.lower() in STOP_WORDS:
+            for w in words:
+                if w.lower() in STOP_WORDS:
                     break
-                name_parts.append(part)
+                name_parts.append(w)
+            
             if name_parts:
-                name = " ".join(name_parts)
-                if name.lower() not in STOP_WORDS:
-                    return name
+                return " ".join(name_parts).title()
 
     # Fallback: look for capitalized words that aren't at sentence start
     words = text.split()
