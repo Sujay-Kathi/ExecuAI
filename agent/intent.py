@@ -151,7 +151,7 @@ def extract_entities(text: str, intent: str) -> dict:
     # ── Meeting title & Recipient ──
     if intent == "meeting_scheduling":
         entities["title"] = _extract_meeting_title(text)
-        recipient = _extract_after_keyword(lower, ["with", "invite", "to"])
+        recipient = _extract_after_keyword(lower, ["with", "invite", "to", "for"])
         if recipient and recipient.lower() not in ("me", "my", "the", "a", "an"):
              # Clean up common possessives
              recipient = recipient.replace("my ", "").replace("your ", "")
@@ -222,16 +222,16 @@ def _extract_name(text: str, intent: str) -> Optional[str]:
 
 def _extract_after_keyword(text: str, keywords: list[str]) -> Optional[str]:
     """Extract the word/phrase immediately after any of the given keywords, stopping at prepositions."""
-    STOP_WORDS = {"about", "for", "regarding", "on", "at", "titled", "in"}
+    STOP_WORDS = {"about", "for", "regarding", "on", "at", "titled", "in", "to", "me", "my"}
     for kw in keywords:
         pattern = rf"\b{kw}\s+([\w\s]+)"
         match = re.search(pattern, text)
         if match:
-            # Take first 1-3 words but stop at prepositions
+            # Take first 1-3 words but stop at prepositions (that aren't the keyword itself)
             words = match.group(1).strip().split()
             result = []
             for w in words[:3]:
-                if w.lower() in STOP_WORDS:
+                if w.lower() in STOP_WORDS and w.lower() != kw:
                     break
                 result.append(w)
             if result:
