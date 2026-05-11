@@ -320,6 +320,14 @@ class AgentController:
                 f"({success_count}/{total_count} steps completed)"
             ),
             "system_health": self._build_health_summary(execution),
+            "task_management": self._build_task_summary(execution),
+            "work_summary": self._build_work_summary(execution),
+            "smart_leave_planning": self._build_leave_plan_summary(execution),
+            "performance_insight": self._build_performance_summary(execution),
+            "knowledge_assistant": self._build_knowledge_summary(execution),
+            "workload_optimization": self._build_workload_summary(execution),
+            "it_request_assistant": self._build_it_request_summary(execution),
+            "notification_intelligence": self._build_notif_intel_summary(execution),
         }
 
         return summaries.get(intent, (
@@ -360,6 +368,76 @@ class AgentController:
         if health_items:
             return "System Health Report — " + " | ".join(health_items)
         return "System health check completed. All systems operational."
+
+    def _build_task_summary(self, execution: list) -> str:
+        """Build summary for task management."""
+        for ex in execution:
+            if ex.get("tool") == "prioritize_tasks" and isinstance(ex.get("detail"), dict):
+                suggestion = ex["detail"].get("suggestion", "")
+                count = len(ex["detail"].get("sorted_tasks", []))
+                return f"You have {count} tasks. {suggestion}"
+        return "Your task list has been retrieved and prioritized."
+
+    def _build_work_summary(self, execution: list) -> str:
+        """Build summary for work summary generator."""
+        for ex in execution:
+            if ex.get("tool") == "summarize_activities" and isinstance(ex.get("detail"), dict):
+                return ex["detail"].get("summary", "Activity summary generated.")
+        return "Daily work summary generated successfully."
+
+    def _build_leave_plan_summary(self, execution: list) -> str:
+        """Build summary for smart leave planning."""
+        dates = []
+        reason = ""
+        for ex in execution:
+            if ex.get("tool") == "suggest_leave_dates" and isinstance(ex.get("detail"), dict):
+                dates = ex["detail"].get("suggested_dates", [])
+                reason = ex["detail"].get("reason", "")
+        if dates:
+            return f"Suggested leave dates: {', '.join(dates)}. {reason}"
+        return "Smart leave planning complete."
+
+    def _build_performance_summary(self, execution: list) -> str:
+        """Build summary for performance insight."""
+        for ex in execution:
+            if ex.get("tool") == "analyze_performance_trends" and isinstance(ex.get("detail"), dict):
+                strengths = ", ".join(ex["detail"].get("strengths", []))
+                return f"Performance analysis complete. Key strengths: {strengths}."
+        return "Your performance insights have been generated."
+
+    def _build_knowledge_summary(self, execution: list) -> str:
+        """Build summary for knowledge assistant."""
+        for ex in execution:
+            if ex.get("tool") == "extract_policy_info" and isinstance(ex.get("detail"), dict):
+                steps = " | ".join(ex["detail"].get("steps", []))
+                return f"Knowledge search results: {steps}"
+        return "I've searched the knowledge base for your query."
+
+    def _build_workload_summary(self, execution: list) -> str:
+        """Build summary for workload optimization."""
+        for ex in execution:
+            if ex.get("tool") == "detect_schedule_overload" and isinstance(ex.get("detail"), dict):
+                day = ex["detail"].get("bottleneck_day", "Wednesday")
+                hours = ex["detail"].get("meeting_hours", 0)
+                return f"Schedule optimization complete. Detected bottleneck on {day} ({hours}h of meetings). Suggestions proposed."
+        return "Workload optimization strategy generated."
+
+    def _build_it_request_summary(self, execution: list) -> str:
+        """Build summary for IT request assistant."""
+        for ex in execution:
+            if ex.get("tool") == "check_software_eligibility" and isinstance(ex.get("detail"), dict):
+                eligible = ex["detail"].get("eligible", False)
+                software = ex["detail"].get("software", "Software")
+                status = "eligible" if eligible else "not eligible"
+                return f"Software request processed. You are {status} for {software}. Access request created and IT notified."
+        return "IT software request submitted."
+
+    def _build_notif_intel_summary(self, execution: list) -> str:
+        """Build summary for notification intelligence."""
+        for ex in execution:
+            if ex.get("tool") == "filter_important_notifications" and isinstance(ex.get("detail"), dict):
+                return ex["detail"].get("summary", "Notifications summarized.")
+        return "Important updates filtered and summarized."
 
     def _enhance_with_llm(self, base_result: str, intent: str, entities: dict) -> Optional[str]:
         """Optionally polish the result summary using GPT."""

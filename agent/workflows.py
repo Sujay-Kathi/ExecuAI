@@ -388,6 +388,176 @@ SYSTEM_HEALTH_WORKFLOW = [
 ]
 
 
+# ────────────────────────────────────────────────────────────
+# 11. Task Management Assistant
+# ────────────────────────────────────────────────────────────
+TASK_MANAGEMENT_WORKFLOW = [
+    _workflow_step("Identified task query"),
+    _workflow_step(
+        "Fetching employee task list",
+        tool="fetch_employee_tasks",
+        args_map=lambda e: {"employee_id": e.get("employee_id", 1)},
+    ),
+    _workflow_step(
+        "Analyzing task priorities",
+        tool="prioritize_tasks",
+        args_map=lambda e: {"tasks": [
+            {"id": 101, "title": "Update API documentation", "priority": "high", "due": "Today"},
+            {"id": 102, "title": "Review PR #452", "priority": "medium", "due": "Tomorrow"},
+            {"id": 103, "title": "Fix bug in login flow", "priority": "high", "due": "Today"}
+        ]},
+    ),
+    _workflow_step("Sorting tasks by urgency"),
+    _workflow_step("Generating structured task list"),
+]
+
+
+# ────────────────────────────────────────────────────────────
+# 12. Daily Work Summary Generator
+# ────────────────────────────────────────────────────────────
+WORK_SUMMARY_WORKFLOW = [
+    _workflow_step("Identified request for work summary"),
+    _workflow_step(
+        "Fetching recent activity logs",
+        tool="fetch_activity_logs",
+        args_map=lambda e: {"employee_id": e.get("employee_id", 1)},
+    ),
+    _workflow_step(
+        "Summarizing completed tasks and contributions",
+        tool="summarize_activities",
+        args_map=lambda e: {"logs": [
+            "Committed 3 changes to 'backend/auth.py'",
+            "Closed 2 Jira tickets (IT-402, IT-405)",
+            "Attended Sprint Standup"
+        ]},
+    ),
+    _workflow_step("Generating professional daily report"),
+]
+
+
+# ────────────────────────────────────────────────────────────
+# 13. Smart Leave Planning
+# ────────────────────────────────────────────────────────────
+SMART_LEAVE_PLANNING_WORKFLOW = [
+    _workflow_step("Identified leave planning request"),
+    _workflow_step(
+        "Checking current leave balance",
+        tool="check_leave_balance",
+        args_map=lambda e: {"employee_id": e.get("employee_id", 1), "leave_type": "earned"},
+    ),
+    _workflow_step(
+        "Analyzing upcoming workload and milestones",
+        tool="analyze_workload",
+        args_map=lambda e: {"employee_id": e.get("employee_id", 1)},
+    ),
+    _workflow_step(
+        "Identifying low-density periods",
+        tool="suggest_leave_dates",
+        args_map=lambda e: {"balance": 15, "workload": {"status": "moderately busy"}},
+    ),
+    _workflow_step("Suggesting optimal leave schedule"),
+]
+
+
+# ────────────────────────────────────────────────────────────
+# 14. Performance Insight
+# ────────────────────────────────────────────────────────────
+PERFORMANCE_INSIGHT_WORKFLOW = [
+    _workflow_step("Identified request for performance data"),
+    _workflow_step(
+        "Fetching performance KPIs and metrics",
+        tool="fetch_performance_data",
+        args_map=lambda e: {"employee_id": e.get("employee_id", 1)},
+    ),
+    _workflow_step(
+        "Analyzing trends and growth areas",
+        tool="analyze_performance_trends",
+        args_map=lambda e: {"data": {"tasks_completed": 45, "code_quality": "92%"}},
+    ),
+    _workflow_step("Highlighting strengths and improvement points"),
+]
+
+
+# ────────────────────────────────────────────────────────────
+# 15. Internal Knowledge Assistant
+# ────────────────────────────────────────────────────────────
+KNOWLEDGE_ASSISTANT_WORKFLOW = [
+    _workflow_step("Identified knowledge base query"),
+    _workflow_step(
+        "Searching company policies and documentation",
+        tool="search_knowledge_base",
+        args_map=lambda e: {"query": e.get("raw_text", "reimbursement policy")},
+    ),
+    _workflow_step(
+        "Extracting relevant procedural information",
+        tool="extract_policy_info",
+        args_map=lambda e: {"search_results": [{"title": "Policy", "snippet": "..."}]},
+    ),
+    _workflow_step("Summarizing steps for user"),
+]
+
+
+# ────────────────────────────────────────────────────────────
+# 16. Workload Optimization
+# ────────────────────────────────────────────────────────────
+WORKLOAD_OPTIMIZATION_WORKFLOW = [
+    _workflow_step("Identified schedule optimization request"),
+    _workflow_step(
+        "Analyzing calendar for meeting density",
+        tool="detect_schedule_overload",
+        args_map=lambda e: {"calendar_data": {}},
+    ),
+    _workflow_step(
+        "Identifying rescheduling opportunities",
+        tool="suggest_rescheduling",
+        args_map=lambda e: {"overloaded_slots": ["Wednesday PM"]},
+    ),
+    _workflow_step("Proposing balanced daily schedule"),
+]
+
+
+# ────────────────────────────────────────────────────────────
+# 17. Smart IT Request Assistant
+# ────────────────────────────────────────────────────────────
+IT_REQUEST_ASSISTANT_WORKFLOW = [
+    _workflow_step("Identified software request"),
+    _workflow_step(
+        "Checking role-based software eligibility",
+        tool="check_software_eligibility",
+        args_map=lambda e: {"role": e.get("role", "Software Engineer"), "software": e.get("system", "IntelliJ")},
+    ),
+    _workflow_step(
+        "Creating automated access request",
+        tool="grant_system_access",
+        args_map=lambda e: {"name": e.get("name", "Employee"), "system": e.get("system", "Software")},
+    ),
+    _workflow_step(
+        "Notifying IT administration team",
+        tool="send_notification_email",
+        args_map=lambda e: {"to": "it-admin@enterprise.com", "subject": "Software Request", "body": "License requested."},
+    ),
+]
+
+
+# ────────────────────────────────────────────────────────────
+# 18. Notification Intelligence
+# ────────────────────────────────────────────────────────────
+NOTIFICATION_INTELLIGENCE_WORKFLOW = [
+    _workflow_step("Identified request for important updates"),
+    _workflow_step(
+        "Fetching all unread unread notifications",
+        tool="fetch_notifications",
+        args_map=lambda e: {"employee_id": e.get("employee_id", 1)},
+    ),
+    _workflow_step(
+        "Prioritizing urgent alerts and mentions",
+        tool="filter_important_notifications",
+        args_map=lambda e: {"notifications": []},
+    ),
+    _workflow_step("Summarizing critical updates"),
+]
+
+
 # ── Master mapping: intent → workflow ────────────────────────
 WORKFLOW_MAP = {
     "employee_onboarding":  ONBOARDING_WORKFLOW,
@@ -400,6 +570,16 @@ WORKFLOW_MAP = {
     "attrition_prediction": ATTRITION_PREDICTION_WORKFLOW,
     "notification":         NOTIFICATION_WORKFLOW,
     "system_health":        SYSTEM_HEALTH_WORKFLOW,
+
+    # New Features
+    "task_management":      TASK_MANAGEMENT_WORKFLOW,
+    "work_summary":         WORK_SUMMARY_WORKFLOW,
+    "smart_leave_planning": SMART_LEAVE_PLANNING_WORKFLOW,
+    "performance_insight":  PERFORMANCE_INSIGHT_WORKFLOW,
+    "knowledge_assistant":  KNOWLEDGE_ASSISTANT_WORKFLOW,
+    "workload_optimization": WORKLOAD_OPTIMIZATION_WORKFLOW,
+    "it_request_assistant": IT_REQUEST_ASSISTANT_WORKFLOW,
+    "notification_intelligence": NOTIFICATION_INTELLIGENCE_WORKFLOW,
 }
 
 # ── Chaining rules: intent → list of follow-up intents ──────

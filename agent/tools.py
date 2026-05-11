@@ -681,6 +681,205 @@ def detect_issues() -> dict:
 
 
 # ────────────────────────────────────────────────────────────
+# Task & Activity Tools
+# ────────────────────────────────────────────────────────────
+
+def fetch_employee_tasks(employee_id: int = 1) -> dict:
+    """Fetch all assigned tasks for an employee."""
+    tasks = [
+        {"id": 101, "title": "Update API documentation", "priority": "high", "due": "Today"},
+        {"id": 102, "title": "Review PR #452", "priority": "medium", "due": "Tomorrow"},
+        {"id": 103, "title": "Fix bug in login flow", "priority": "high", "due": "Today"},
+        {"id": 104, "title": "Meeting with stakeholders", "priority": "medium", "due": "Thursday"},
+    ]
+    return {
+        "tool": "fetch_employee_tasks",
+        "status": "success",
+        "employee_id": employee_id,
+        "tasks": tasks,
+        "count": len(tasks),
+    }
+
+
+def prioritize_tasks(tasks: list) -> dict:
+    """Sort tasks by priority and urgency."""
+    priority_map = {"high": 0, "medium": 1, "low": 2}
+    sorted_tasks = sorted(tasks, key=lambda t: priority_map.get(t["priority"], 3))
+    return {
+        "tool": "prioritize_tasks",
+        "status": "success",
+        "sorted_tasks": sorted_tasks,
+        "suggestion": f"Focus on '{sorted_tasks[0]['title']}' first as it is high priority."
+    }
+
+
+def fetch_activity_logs(employee_id: int = 1) -> dict:
+    """Fetch recent activity logs for an employee."""
+    logs = [
+        "Committed 3 changes to 'backend/auth.py'",
+        "Closed 2 Jira tickets (IT-402, IT-405)",
+        "Attended Sprint Standup",
+        "Replied to 12 Slack messages in #dev-team",
+    ]
+    return {
+        "tool": "fetch_activity_logs",
+        "status": "success",
+        "employee_id": employee_id,
+        "logs": logs,
+    }
+
+
+def summarize_activities(logs: list) -> dict:
+    """Generate a natural language summary of activities."""
+    summary = "Today you focused on backend authentication, resolved 2 IT tickets, and maintained active communication with the dev team."
+    return {
+        "tool": "summarize_activities",
+        "status": "success",
+        "summary": summary,
+        "achievements_count": len(logs),
+    }
+
+
+# ────────────────────────────────────────────────────────────
+# Planning & Insight Tools
+# ────────────────────────────────────────────────────────────
+
+def analyze_workload(employee_id: int = 1) -> dict:
+    """Analyze current workload based on tasks and meetings."""
+    return {
+        "tool": "analyze_workload",
+        "status": "success",
+        "workload_score": 75,  # 0-100
+        "status": "moderately busy",
+        "busy_days": ["Tuesday", "Wednesday"],
+    }
+
+
+def suggest_leave_dates(balance: int, workload: dict) -> dict:
+    """Suggest the best dates for leave based on low workload periods."""
+    return {
+        "tool": "suggest_leave_dates",
+        "status": "success",
+        "suggested_dates": ["2026-05-22", "2026-05-25"],
+        "reason": "These dates follow the project milestone and have minimal meeting density.",
+    }
+
+
+def fetch_performance_data(employee_id: int = 1) -> dict:
+    """Fetch performance metrics for an employee."""
+    return {
+        "tool": "fetch_performance_data",
+        "status": "success",
+        "kpis": {
+            "tasks_completed": 45,
+            "code_quality": "92%",
+            "collaboration_score": 4.8,
+        },
+        "trends": "Improving",
+    }
+
+
+def analyze_performance_trends(data: dict) -> dict:
+    """Analyze performance data for strengths and improvements."""
+    return {
+        "tool": "analyze_performance_trends",
+        "status": "success",
+        "strengths": ["Consistent delivery", "High code quality"],
+        "improvements": ["More active participation in cross-team reviews"],
+    }
+
+
+# ────────────────────────────────────────────────────────────
+# Knowledge & Assistance Tools
+# ────────────────────────────────────────────────────────────
+
+def search_knowledge_base(query: str) -> dict:
+    """Search company knowledge base for procedures and policies."""
+    return {
+        "tool": "search_knowledge_base",
+        "status": "success",
+        "query": query,
+        "results": [
+            {"title": "Reimbursement Policy", "snippet": "Submit all receipts within 30 days via the Finance portal..."},
+            {"title": "Travel Guidelines", "snippet": "Book flights 2 weeks in advance for domestic travel..."},
+        ]
+    }
+
+
+def extract_policy_info(search_results: list) -> dict:
+    """Extract key steps from search results."""
+    return {
+        "tool": "extract_policy_info",
+        "status": "success",
+        "steps": [
+            "1. Collect all digital receipts",
+            "2. Log in to the Finance Portal",
+            "3. Select 'New Reimbursement'",
+            "4. Attach receipts and submit"
+        ],
+    }
+
+
+def detect_schedule_overload(calendar_data: dict) -> dict:
+    """Detect overloaded days in the calendar."""
+    return {
+        "tool": "detect_schedule_overload",
+        "status": "success",
+        "overloaded": True,
+        "bottleneck_day": "Wednesday",
+        "meeting_hours": 6.5,
+    }
+
+
+def suggest_rescheduling(overloaded_slots: list) -> dict:
+    """Suggest meetings that can be rescheduled to balance the day."""
+    return {
+        "tool": "suggest_rescheduling",
+        "status": "success",
+        "suggestions": ["Move 'Weekly Sync' to Thursday morning", "Shorten 'Design Review' by 15 mins"],
+    }
+
+
+# ────────────────────────────────────────────────────────────
+# IT & Software Tools
+# ────────────────────────────────────────────────────────────
+
+def check_software_eligibility(role: str, software: str) -> dict:
+    """Check if the employee's role is eligible for a software license."""
+    return {
+        "tool": "check_software_eligibility",
+        "status": "success",
+        "role": role,
+        "software": software,
+        "eligible": True,
+    }
+
+
+def fetch_notifications(employee_id: int = 1) -> dict:
+    """Fetch all unread notifications for an employee."""
+    return {
+        "tool": "fetch_notifications",
+        "status": "success",
+        "notifications": [
+            {"type": "urgent", "msg": "Security patch required on your laptop"},
+            {"type": "info", "msg": "New company policy on remote work updated"},
+            {"type": "social", "msg": "Alice mentioned you in #random"},
+        ],
+    }
+
+
+def filter_important_notifications(notifications: list) -> dict:
+    """Filter and prioritize important notifications."""
+    urgent = [n for n in notifications if n["type"] == "urgent"]
+    return {
+        "tool": "filter_important_notifications",
+        "status": "success",
+        "summary": f"You have {len(urgent)} urgent alert regarding a security patch.",
+        "important_count": len(urgent),
+    }
+
+
+# ────────────────────────────────────────────────────────────
 # Tool Registry — used by the agent planner
 # ────────────────────────────────────────────────────────────
 TOOL_REGISTRY = {
@@ -731,4 +930,27 @@ TOOL_REGISTRY = {
     "check_api_health": check_api_health,
     "check_ml_health": check_ml_health,
     "detect_issues": detect_issues,
+
+    # Task & Activity
+    "fetch_employee_tasks": fetch_employee_tasks,
+    "prioritize_tasks": prioritize_tasks,
+    "fetch_activity_logs": fetch_activity_logs,
+    "summarize_activities": summarize_activities,
+
+    # Planning & Insight
+    "analyze_workload": analyze_workload,
+    "suggest_leave_dates": suggest_leave_dates,
+    "fetch_performance_data": fetch_performance_data,
+    "analyze_performance_trends": analyze_performance_trends,
+
+    # Knowledge & Assistance
+    "search_knowledge_base": search_knowledge_base,
+    "extract_policy_info": extract_policy_info,
+    "detect_schedule_overload": detect_schedule_overload,
+    "suggest_rescheduling": suggest_rescheduling,
+
+    # IT & Software
+    "check_software_eligibility": check_software_eligibility,
+    "fetch_notifications": fetch_notifications,
+    "filter_important_notifications": filter_important_notifications,
 }

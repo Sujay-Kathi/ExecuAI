@@ -84,15 +84,16 @@ function App() {
     }
   };
 
-  const quickActions = [
-    { label: '👤 Onboard Employee', prompt: 'Onboard Rahul as Software Engineer in Engineering' },
-    { label: '🔑 Reset Password', prompt: 'Reset password for Amit' },
-    { label: '📅 Schedule Meeting', prompt: 'Schedule meeting about Sprint Planning' },
-    { label: '🏥 Apply Leave', prompt: 'Apply for sick leave from tomorrow' },
-    { label: '🔐 Grant Access', prompt: 'Give access to GitHub for Priya' },
-    { label: '🔧 Report Issue', prompt: 'Slack is not working, keeps crashing' },
     { label: '📊 Attrition Risk', prompt: 'Who is likely to leave the company?' },
     { label: '💚 System Health', prompt: 'Check system status' },
+    { label: '📋 My Tasks', prompt: 'What are my tasks for today?' },
+    { label: '📝 Daily Summary', prompt: 'What did I do today?' },
+    { label: '📅 Plan Leave', prompt: 'Plan my leave for next month' },
+    { label: '📈 Performance', prompt: 'Show my performance insights' },
+    { label: '💡 How-To', prompt: 'How to apply for reimbursement?' },
+    { label: '⚡ Optimize Day', prompt: 'Optimize my schedule' },
+    { label: '💻 Get Software', prompt: 'I need IntelliJ IDEA software' },
+    { label: '🔔 Top Updates', prompt: 'What are my important updates?' },
   ];
 
   const formatMessage = (text) => {
@@ -114,6 +115,14 @@ function App() {
     attrition_prediction: { label: 'ML Prediction', color: '#c39bd3' },
     notification: { label: 'Notification', color: '#abebc6' },
     system_health: { label: 'System Health', color: '#76d7c4' },
+    task_management: { label: 'Tasks', color: '#ffcc00' },
+    work_summary: { label: 'Activity', color: '#ff9966' },
+    smart_leave_planning: { label: 'Leave Plan', color: '#33ccff' },
+    performance_insight: { label: 'Performance', color: '#cc99ff' },
+    knowledge_assistant: { label: 'Knowledge', color: '#99ff99' },
+    workload_optimization: { label: 'Optimize', color: '#ff66ff' },
+    it_request_assistant: { label: 'IT Request', color: '#6699ff' },
+    notification_intelligence: { label: 'Intelligence', color: '#ff3366' },
     general: { label: 'General', color: '#8b90a0' },
   };
 

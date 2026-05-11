@@ -60,6 +60,38 @@ INTENT_TRIGGERS = [
         "server status", "api status", "is the system up",
         "diagnostics",
     ]),
+    ("task_management",      [
+        "what are my tasks", "show my tasks", "task list", "my to-do",
+        "pending work", "assigned tasks", "current tasks",
+    ]),
+    ("work_summary",         [
+        "what did i do today", "daily summary", "my activity today",
+        "work log", "accomplishments today", "daily report",
+    ]),
+    ("smart_leave_planning", [
+        "plan my leave", "best dates for leave", "suggest leave",
+        "when should i take leave", "leave recommendations",
+    ]),
+    ("performance_insight",  [
+        "my performance", "performance review", "how am i doing",
+        "performance trends", "growth metrics", "feedback summary",
+    ]),
+    ("knowledge_assistant",  [
+        "how to", "procedure for", "company policy", "where can i find",
+        "manual", "guidelines", "reimbursement", "benefits",
+    ]),
+    ("workload_optimization", [
+        "optimize my schedule", "optimize workload", "too many meetings",
+        "balance my day", "schedule optimization",
+    ]),
+    ("it_request_assistant", [
+        "i need software", "request software", "software access",
+        "install software", "need tools", "request license",
+    ]),
+    ("notification_intelligence", [
+        "important updates", "summarize notifications", "what missed",
+        "urgent alerts", "notification summary",
+    ]),
 ]
 
 
