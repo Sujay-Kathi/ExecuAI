@@ -558,6 +558,35 @@ NOTIFICATION_INTELLIGENCE_WORKFLOW = [
 ]
 
 
+# ────────────────────────────────────────────────────────────
+# 19. Comprehensive Retention Analysis (Master Demo)
+# ────────────────────────────────────────────────────────────
+RETENTION_ANALYSIS_WORKFLOW = [
+    _workflow_step("Initializing deep retention audit"),
+    _workflow_step(
+        "Fetching employee profile",
+        tool="get_employee_data",
+        args_map=lambda e: {"name": e.get("name", "Rahul")},
+    ),
+    _workflow_step(
+        "Running ML Attrition Prediction (Random Forest)",
+        tool="predict_attrition",
+        args_map=lambda e: {"name": e.get("name", "Rahul")},
+    ),
+    _workflow_step(
+        "Auditing current task load",
+        tool="fetch_employee_tasks",
+        args_map=lambda e: {"employee_id": 1},
+    ),
+    _workflow_step(
+        "Analyzing burnout risk vs productivity",
+        tool="analyze_workload",
+        args_map=lambda e: {"employee_id": 1},
+    ),
+    _workflow_step("Compiling multi-dimensional HR insight report"),
+]
+
+
 # ── Master mapping: intent → workflow ────────────────────────
 WORKFLOW_MAP = {
     "employee_onboarding":  ONBOARDING_WORKFLOW,
@@ -580,6 +609,7 @@ WORKFLOW_MAP = {
     "workload_optimization": WORKLOAD_OPTIMIZATION_WORKFLOW,
     "it_request_assistant": IT_REQUEST_ASSISTANT_WORKFLOW,
     "notification_intelligence": NOTIFICATION_INTELLIGENCE_WORKFLOW,
+    "retention_analysis":   RETENTION_ANALYSIS_WORKFLOW,
 }
 
 # ── Chaining rules: intent → list of follow-up intents ──────

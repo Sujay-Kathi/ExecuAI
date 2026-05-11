@@ -92,6 +92,10 @@ INTENT_TRIGGERS = [
         "important updates", "summarize notifications", "what missed",
         "urgent alerts", "notification summary",
     ]),
+    ("retention_analysis",   [
+        "deep audit", "retention analysis", "comprehensive report",
+        "full insight", "deep dive on employee",
+    ]),
 ]
 
 

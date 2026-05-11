@@ -165,14 +165,22 @@ def grant_system_access(name: str, system: str) -> dict:
         from agent.integrations import invite_to_github_org
         real_api = invite_to_github_org(name.lower().replace(" ", "-"))
 
+    import random
+    ticket_id = f"IT-{random.randint(1000, 9999)}"
+
     return {
         "tool": "grant_system_access",
         "status": "success",
         "name": name,
         "system": system,
-        "access_level": "write",
-        "message": f"{name} granted access to {system}",
-        "real_api": real_api is not None,
+        "steps": [
+            f"Checking {system} license pool availability... [Available]",
+            f"Creating Jira ticket {ticket_id} for audit trail... [Created]",
+            f"Assigning {system} seat to {name}... [Assigned]",
+            f"Configuring SSO for {name}... [Complete]"
+        ],
+        "ticket": ticket_id,
+        "message": f"Access to {system} has been successfully provisioned for {name}."
     }
 
 

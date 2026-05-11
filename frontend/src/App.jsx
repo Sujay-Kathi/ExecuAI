@@ -99,6 +99,7 @@ function App() {
     { label: '⚡ Optimize', prompt: 'Optimize my schedule' },
     { label: '💻 Software', prompt: 'I need IntelliJ IDEA software' },
     { label: '🔔 Updates', prompt: 'What are my important updates?' },
+    { label: '🚀 Master Demo', prompt: 'Run a deep audit and retention analysis for Rahul' },
   ];
 
   const formatMessage = (text) => {
@@ -128,6 +129,7 @@ function App() {
     workload_optimization: { label: 'Optimize', color: '#ff66ff' },
     it_request_assistant: { label: 'IT Request', color: '#6699ff' },
     notification_intelligence: { label: 'Intelligence', color: '#ff3366' },
+    retention_analysis: { label: 'Master Demo', color: '#f39c12' },
     general: { label: 'General', color: '#8b90a0' },
   };
 

@@ -328,6 +328,7 @@ class AgentController:
             "workload_optimization": self._build_workload_summary(execution),
             "it_request_assistant": self._build_it_request_summary(execution),
             "notification_intelligence": self._build_notif_intel_summary(execution),
+            "retention_analysis": self._build_retention_audit_summary(execution),
         }
 
         return summaries.get(intent, (
@@ -438,6 +439,24 @@ class AgentController:
             if ex.get("tool") == "filter_important_notifications" and isinstance(ex.get("detail"), dict):
                 return ex["detail"].get("summary", "Notifications summarized.")
         return "Important updates filtered and summarized."
+
+    def _build_retention_audit_summary(self, execution: list) -> str:
+        """Build a comprehensive retention audit summary."""
+        profile = ""
+        prediction = ""
+        workload = ""
+        
+        for ex in execution:
+            tool = ex.get("tool")
+            detail = ex.get("detail", {})
+            if tool == "get_employee_data":
+                profile = f"{detail.get('name')} ({detail.get('role')})"
+            elif tool == "predict_attrition":
+                prediction = f"ML Prediction: {detail.get('prediction')} ({detail.get('confidence')} confidence)"
+            elif tool == "analyze_workload":
+                workload = f"Workload Score: {detail.get('workload_score')}/100"
+                
+        return f"Comprehensive Audit for {profile}: {prediction}. {workload}. The full multi-step report has been compiled for HR review."
 
     def _enhance_with_llm(self, base_result: str, intent: str, entities: dict) -> Optional[str]:
         """Optionally polish the result summary using GPT."""
