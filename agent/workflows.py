@@ -224,15 +224,16 @@ MEETING_SCHEDULING_WORKFLOW = [
         args_map=lambda e: {
             "title": e.get("title", "Team Meeting"),
             "organizer": e.get("name", "Organizer"),
+            "attendees": [e.get("recipient", "Team").lower().replace(" ", ".") + "@enterprise.com"]
         },
     ),
     _workflow_step(
         "Sending meeting invites",
         tool="send_notification_email",
         args_map=lambda e: {
-            "to": "team@enterprise.com",
+            "to": e.get("recipient", "team").lower().replace(" ", ".") + "@enterprise.com",
             "subject": f"Meeting Invite: {e.get('title', 'Team Meeting')}",
-            "body": f"You are invited to '{e.get('title', 'Team Meeting')}'.",
+            "body": f"Hi {e.get('recipient', 'Team')},\n\nYou are invited to '{e.get('title', 'Team Meeting')}'.",
         },
     ),
     _workflow_step("Logging calendar event"),

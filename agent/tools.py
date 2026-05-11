@@ -212,7 +212,7 @@ def validate_access_eligibility(name: str, system: str) -> dict:
 # Meeting & Calendar Tools
 # ────────────────────────────────────────────────────────────
 
-def schedule_meeting(title: str, organizer: str = "System") -> dict:
+def schedule_meeting(title: str, organizer: str = "System", attendees: list[str] = None) -> dict:
     """Schedule a meeting — tries Google Calendar first, then DB fallback."""
     from agent.integrations import create_real_calendar_event
 
@@ -224,6 +224,7 @@ def schedule_meeting(title: str, organizer: str = "System") -> dict:
         description=f"Scheduled by {organizer} via ExecuAI",
         start_time=meeting_time,
         duration_minutes=30,
+        attendees=attendees,
     )
 
     # Always persist in local DB too

@@ -52,23 +52,23 @@ def test(name: str, func):
     try:
         func()
         PASSED += 1
-        print(f"  ✅ {name}")
+        print(f"  [PASS] {name}")
     except AssertionError as e:
         FAILED += 1
         ERRORS.append((name, str(e)))
-        print(f"  ❌ {name}: {e}")
+        print(f"  [FAIL] {name}: {e}")
     except Exception as e:
         FAILED += 1
         tb = traceback.format_exc()
         ERRORS.append((name, f"{e}\n{tb}"))
-        print(f"  💥 {name}: {e}")
+        print(f"  [ERROR] {name}: {e}")
 
 
-# ════════════════════════════════════════════════════════════
+# ============================================================
 # 1. Intent Classification Tests
-# ════════════════════════════════════════════════════════════
+# ============================================================
 def test_intents():
-    print("\n━━━ 1. Intent Classification ━━━")
+    print("-" * 30 + " 1. Intent Classification " + "-" * 30)
 
     cases = [
         ("Onboard John as Software Engineer in Engineering", "employee_onboarding"),
@@ -98,14 +98,14 @@ def test_intents():
         def check(t=text, e=expected):
             result = classify_intent(t)
             assert result == e, f"classify_intent('{t}') → '{result}', expected '{e}'"
-        test(f"Intent: {expected} ← \"{text[:50]}\"", check)
+        test(f"Intent: {expected} <- \"{text[:50]}\"", check)
 
 
-# ════════════════════════════════════════════════════════════
+# ============================================================
 # 2. Entity Extraction Tests
-# ════════════════════════════════════════════════════════════
+# ============================================================
 def test_entities():
-    print("\n━━━ 2. Entity Extraction ━━━")
+    print("\n--- 2. Entity Extraction ---")
 
     def check_onboard_entities():
         entities = extract_entities("Onboard John as Software Engineer in Engineering", "employee_onboarding")
@@ -130,11 +130,11 @@ def test_entities():
     test("Extract meeting title", check_meeting_title)
 
 
-# ════════════════════════════════════════════════════════════
+# ============================================================
 # 3. Tool Registry Completeness
-# ════════════════════════════════════════════════════════════
+# ============================================================
 def test_tool_registry():
-    print("\n━━━ 3. Tool Registry ━━━")
+    print("\n--- 3. Tool Registry ---")
 
     expected_tools = [
         "create_employee_record", "generate_employee_email", "get_employee_info",
@@ -168,11 +168,11 @@ def test_tool_registry():
     test(f"Tool count >= {len(expected_tools)}", check_count)
 
 
-# ════════════════════════════════════════════════════════════
+# ============================================================
 # 4. Workflow Map Completeness
-# ════════════════════════════════════════════════════════════
+# ============================================================
 def test_workflows():
-    print("\n━━━ 4. Workflow Map ━━━")
+    print("\n--- 4. Workflow Map ---")
 
     expected_intents = [
         "employee_onboarding", "it_provisioning", "access_management",
@@ -201,11 +201,11 @@ def test_workflows():
     test("Chain rules configured", check_chain_rules)
 
 
-# ════════════════════════════════════════════════════════════
+# ============================================================
 # 5. Individual Tool Tests
-# ════════════════════════════════════════════════════════════
+# ============================================================
 def test_individual_tools():
-    print("\n━━━ 5. Individual Tool Execution ━━━")
+    print("\n--- 5. Individual Tool Execution ---")
 
     def _run_tool(tool_name, **kwargs):
         tool_fn = TOOL_REGISTRY[tool_name]
@@ -252,11 +252,11 @@ def test_individual_tools():
         test(f"Tool: {tool_name}", check)
 
 
-# ════════════════════════════════════════════════════════════
+# ============================================================
 # 6. End-to-End Agent Workflow Tests
-# ════════════════════════════════════════════════════════════
+# ============================================================
 def test_agent_e2e():
-    print("\n━━━ 6. End-to-End Agent Workflows ━━━")
+    print("\n--- 6. End-to-End Agent Workflows ---")
 
     controller = AgentController()
 
@@ -291,11 +291,11 @@ def test_agent_e2e():
         test(f"E2E: {expected_intent}", check)
 
 
-# ════════════════════════════════════════════════════════════
+# ============================================================
 # 7. Integration Wrappers (graceful fallback)
-# ════════════════════════════════════════════════════════════
+# ============================================================
 def test_integrations():
-    print("\n━━━ 7. Integration Wrappers ━━━")
+    print("\n--- 7. Integration Wrappers ---")
 
     def check_email_integration():
         from agent.integrations import send_real_email
@@ -325,11 +325,11 @@ def test_integrations():
     test("GitHub integration (graceful)", check_github_integration)
 
 
-# ════════════════════════════════════════════════════════════
+# ============================================================
 # 8. ML Model Tests
-# ════════════════════════════════════════════════════════════
+# ============================================================
 def test_ml_model():
-    print("\n━━━ 8. ML Attrition Model ━━━")
+    print("\n--- 8. ML Attrition Model ---")
 
     def check_model_loads():
         from ml.predictor import AttritionPredictor
@@ -351,11 +351,11 @@ def test_ml_model():
     test("ML model produces valid prediction", check_model_predicts)
 
 
-# ════════════════════════════════════════════════════════════
+# ============================================================
 # 9. Database Operations Tests
-# ════════════════════════════════════════════════════════════
+# ============================================================
 def test_database():
-    print("\n━━━ 9. Database Operations ━━━")
+    print("\n--- 9. Database Operations ---")
 
     def check_db_init():
         from backend.database import init_db, SessionLocal
@@ -407,11 +407,11 @@ def test_database():
     test("Execution log persistence", check_execution_log)
 
 
-# ════════════════════════════════════════════════════════════
+# ============================================================
 # 10. check_db_health — SQL text issue
-# ════════════════════════════════════════════════════════════
+# ============================================================
 def test_db_health_tool():
-    print("\n━━━ 10. DB Health Tool (SQLAlchemy text) ━━━")
+    print("\n--- 10. DB Health Tool (SQLAlchemy text) ---")
 
     def check_db_health_executes():
         result = TOOL_REGISTRY["check_db_health"]()
@@ -422,9 +422,9 @@ def test_db_health_tool():
     test("check_db_health returns healthy", check_db_health_executes)
 
 
-# ════════════════════════════════════════════════════════════
+# ============================================================
 # Main runner
-# ════════════════════════════════════════════════════════════
+# ============================================================
 if __name__ == "__main__":
     print("=" * 60)
     print("  ExecuAI — Comprehensive Automation Test Suite")
@@ -447,7 +447,7 @@ if __name__ == "__main__":
     if ERRORS:
         print(f"\n  Failed tests:")
         for name, err in ERRORS:
-            print(f"    ❌ {name}")
+            print(f"    [FAIL] {name}")
             for line in err.split("\n")[:3]:
                 print(f"       {line}")
     print("=" * 60)
