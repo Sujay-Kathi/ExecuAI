@@ -371,17 +371,26 @@ def send_notification_email(to: str, subject: str, body: str, recipient_name: st
             "status": "success",
             "to": to,
             "subject": subject,
-            "message": f"Real email sent to {to}: '{subject}'",
+            "message": f"Real email sent successfully to {to}.",
             "method": "Gmail SMTP",
         }
 
+    # If send failed but credentials exist, report it as an error
+    if os.getenv("SMTP_EMAIL") and os.getenv("SMTP_APP_PASSWORD"):
+        return {
+            "tool": "send_notification_email",
+            "status": "error",
+            "to": to,
+            "message": f"Failed to send real email to {to}. This could be due to a connection issue or an invalid App Password.",
+        }
+
+    # Fallback to simulation only if credentials are missing
     return {
         "tool": "send_notification_email",
-        "status": "success",
+        "status": "simulated",
         "to": to,
         "subject": subject,
-        "message": f"Email sent to {to}: '{subject}'",
-        "method": "Simulated (set SMTP_EMAIL & SMTP_APP_PASSWORD for real emails)",
+        "message": f"Simulated email notification to {to} (set SMTP_EMAIL & SMTP_APP_PASSWORD for real emails).",
     }
 
 
