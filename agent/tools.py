@@ -1025,4 +1025,7 @@ TOOL_REGISTRY = {
     "check_software_eligibility": check_software_eligibility,
     "fetch_notifications": fetch_notifications,
     "filter_important_notifications": filter_important_notifications,
+    
+    # Communications
+    "send_notification_email": send_notification_email,
 }
