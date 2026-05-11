@@ -53,14 +53,29 @@ def send_real_email(to: str, subject: str, body: str) -> dict | None:
         # Plain-text fallback
         msg.attach(MIMEText(body, "plain"))
 
-        # Lean HTML version
+        # Premium Dark HTML version
         html_body = f"""
-        <div style="font-family: Arial, sans-serif; max-width: 600px; color: #333; line-height: 1.6;">
-            <h2 style="color: #0056b3; border-bottom: 1px solid #eee; padding-bottom: 10px;">{subject}</h2>
-            <p>{body.replace(chr(10), '<br>')}</p>
-            <p style="font-size: 12px; color: #777; border-top: 1px solid #eee; padding-top: 10px; margin-top: 20px;">
-                Sent by ExecuAI Assistant.
-            </p>
+        <div style="background-color: #0f172a; padding: 40px; border-radius: 16px; font-family: 'Inter', Helvetica, Arial, sans-serif; max-width: 600px; margin: 20px auto; color: #f8fafc; border: 1px solid #1e293b;">
+            <div style="text-align: center; margin-bottom: 30px;">
+                <div style="font-size: 32px; margin-bottom: 10px;">⚡</div>
+                <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700;">ExecuAI</h1>
+                <p style="margin: 5px 0 0; color: #94a3b8; font-size: 13px; text-transform: uppercase; letter-spacing: 1.5px;">Enterprise Assistant</p>
+            </div>
+            
+            <hr style="border: 0; height: 1px; background: #334155; margin: 30px 0;">
+            
+            <div style="margin-bottom: 24px; padding: 0 10px;">
+                <h2 style="color: #22d3ee; font-size: 18px; font-weight: 600; margin-bottom: 16px;">{subject}</h2>
+                <div style="color: #cbd5e1; line-height: 1.6; font-size: 15px;">
+                    {body.replace(chr(10), '<br>')}
+                </div>
+            </div>
+            
+            <hr style="border: 0; height: 1px; background: #334155; margin: 40px 0 20px 0;">
+            
+            <div style="text-align: center; color: #64748b; font-size: 12px; letter-spacing: 0.5px;">
+                Sent automatically by <span style="color: #94a3b8; font-weight: 600;">ExecuAI</span> &bull; Do not reply
+            </div>
         </div>
         """
         msg.attach(MIMEText(html_body, "html"))
