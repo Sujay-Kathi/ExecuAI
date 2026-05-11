@@ -15,10 +15,12 @@ import os
 import json
 import smtplib
 import logging
+from dotenv import load_dotenv
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime, timedelta, timezone
 
+load_dotenv()
 logger = logging.getLogger(__name__)
 
 
