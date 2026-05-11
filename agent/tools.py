@@ -310,6 +310,20 @@ def send_notification_email(to: str, subject: str, body: str) -> dict:
     """Send an email — tries real Gmail SMTP first, then simulation fallback."""
     from agent.integrations import send_real_email
 
+    # Automatically resolve generic placeholder emails to the primary user in the database
+    if to in ["user@enterprise.com", "employee@enterprise.com"]:
+        try:
+            from backend.database import SessionLocal
+            from backend.models import Employee
+            db = SessionLocal()
+            # Default to the first employee (the main user)
+            emp = db.query(Employee).first()
+            if emp:
+                to = emp.email
+            db.close()
+        except Exception:
+            pass
+
     real = send_real_email(to=to, subject=subject, body=body)
     if real:
         return {
