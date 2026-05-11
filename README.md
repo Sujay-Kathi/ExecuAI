@@ -71,24 +71,21 @@ cp .env.example .env
 # Open .env and add your OPENAI_API_KEY
 ```
 
-### 4. Run the Backend (FastAPI)
+### 4. Run the Platform
 
-```bash
-uvicorn backend.main:app --reload
-# API Base URL: http://127.0.0.1:8000
-# Swagger Docs: http://127.0.0.1:8000/docs
+*(Note: For first-time setup, ensure you run `npm install` inside the `frontend` directory).*
+
+Launch both the backend and frontend simultaneously using the provided startup script:
+
+```powershell
+.\run_all.ps1
 ```
 
-### 5. Run the Frontend (React + Vite)
+- **API Base URL**: http://127.0.0.1:8000
+- **Swagger Docs**: http://127.0.0.1:8000/docs
+- **UI URL**: http://localhost:5173
 
-```bash
-cd frontend
-npm install
-npm run dev
-# UI URL: http://localhost:5173
-```
-
-### 6. Run the Test Suite
+### 5. Run the Test Suite
 
 ```bash
 # Run the 79 end-to-end automation tests
