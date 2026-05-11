@@ -84,16 +84,21 @@ function App() {
     }
   };
 
-    { label: '📊 Attrition Risk', prompt: 'Who is likely to leave the company?' },
-    { label: '💚 System Health', prompt: 'Check system status' },
-    { label: '📋 My Tasks', prompt: 'What are my tasks for today?' },
-    { label: '📝 Daily Summary', prompt: 'What did I do today?' },
+  const quickActions = [
+    { label: '👤 Onboard', prompt: 'Onboard Rahul as Software Engineer' },
+    { label: '🔑 Reset Pwd', prompt: 'Reset password for Amit' },
+    { label: '📅 Meeting', prompt: 'Schedule meeting about Sprint Planning' },
+    { label: '🏥 Leave', prompt: 'Apply for sick leave from tomorrow' },
+    { label: '📊 Attrition', prompt: 'Who is likely to leave the company?' },
+    { label: '💚 Health', prompt: 'Check system status' },
+    { label: '📋 Tasks', prompt: 'What are my tasks for today?' },
+    { label: '📝 Summary', prompt: 'What did I do today?' },
     { label: '📅 Plan Leave', prompt: 'Plan my leave for next month' },
     { label: '📈 Performance', prompt: 'Show my performance insights' },
     { label: '💡 How-To', prompt: 'How to apply for reimbursement?' },
-    { label: '⚡ Optimize Day', prompt: 'Optimize my schedule' },
-    { label: '💻 Get Software', prompt: 'I need IntelliJ IDEA software' },
-    { label: '🔔 Top Updates', prompt: 'What are my important updates?' },
+    { label: '⚡ Optimize', prompt: 'Optimize my schedule' },
+    { label: '💻 Software', prompt: 'I need IntelliJ IDEA software' },
+    { label: '🔔 Updates', prompt: 'What are my important updates?' },
   ];
 
   const formatMessage = (text) => {
