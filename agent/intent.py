@@ -25,6 +25,7 @@ INTENT_TRIGGERS = [
     ("access_management",    [
         "give access", "grant access", "revoke access", "remove access",
         "access request", "permission", "add to",
+        "grant",  # "Grant Alice access to GitHub" — "grant" alone is specific enough
     ]),
     ("leave_request",        [
         "leave", "day off", "time off", "vacation", "sick leave",
@@ -41,8 +42,9 @@ INTENT_TRIGGERS = [
         "outage", "down", "malfunction",
     ]),
     ("password_reset",       [
-        "reset password", "forgot password", "change password",
-        "password expired", "unlock account", "locked out",
+        "reset password", "forgot password", "forgot my password",
+        "change password", "password expired", "unlock account",
+        "locked out", "forgot",
     ]),
     ("attrition_prediction", [
         "likely to leave", "attrition", "churn", "flight risk",
@@ -132,29 +134,46 @@ def _extract_name(text: str, intent: str) -> Optional[str]:
     """Extract a person name from the request."""
     lower = text.lower()
 
+    # Words that signal the name has ended (role / dept / preposition context)
+    STOP_WORDS = {
+        "as", "in", "to", "for", "the", "a", "an", "from", "with", "on",
+        "software", "engineer", "manager", "admin", "administrator",
+        "senior", "junior", "lead", "director", "vp", "associate",
+        "developer", "analyst", "consultant", "intern", "designer",
+        "specialist", "coordinator", "executive", "officer", "architect",
+        "hr", "it", "department", "dept", "team", "engineering",
+        "marketing", "sales", "finance", "operations", "support",
+        "monday", "tuesday", "wednesday", "thursday", "friday",
+        "saturday", "sunday", "january", "february", "march",
+        "april", "may", "june", "july", "august", "september",
+        "october", "november", "december",
+        "access", "system", "account", "password", "email",
+    }
+
     # Pattern: "onboard <Name>", "provision <Name>", etc.
+    # Capture one or more capitalized words, but stop at stop-words.
     for keyword in ("onboard", "provision", "hire", "setup system for",
-                    "give access to", "grant access to", "remind",
+                    "give access to", "grant access to", "grant", "remind",
                     "reset password for", "employee"):
         pattern = rf"(?i){keyword}\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)"
         match = re.search(pattern, text)
         if match:
-            name = match.group(1).strip()
-            # Filter out known non-name words
-            if name.lower() not in ("as", "in", "to", "for", "the", "a"):
-                return name
+            raw = match.group(1).strip()
+            # Trim at the first stop-word
+            name_parts = []
+            for part in raw.split():
+                if part.lower() in STOP_WORDS:
+                    break
+                name_parts.append(part)
+            if name_parts:
+                name = " ".join(name_parts)
+                if name.lower() not in STOP_WORDS:
+                    return name
 
     # Fallback: look for capitalized words that aren't at sentence start
     words = text.split()
     for i, word in enumerate(words):
-        if i > 0 and word[0].isupper() and word.lower() not in (
-            "software", "engineer", "manager", "admin", "hr", "it",
-            "senior", "junior", "lead", "director", "vp",
-            "monday", "tuesday", "wednesday", "thursday", "friday",
-            "saturday", "sunday", "january", "february", "march",
-            "april", "may", "june", "july", "august", "september",
-            "october", "november", "december",
-        ):
+        if i > 0 and word[0].isupper() and word.lower() not in STOP_WORDS:
             return word
 
     return None

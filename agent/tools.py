@@ -624,8 +624,9 @@ def check_db_health() -> dict:
     """Check database connectivity."""
     try:
         from backend.database import SessionLocal
+        from sqlalchemy import text
         db = SessionLocal()
-        db.execute("SELECT 1")
+        db.execute(text("SELECT 1"))
         db.close()
         return {
             "tool": "check_db_health",
