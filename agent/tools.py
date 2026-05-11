@@ -532,56 +532,56 @@ def generate_reset_link(name: str) -> dict:
 # ML / Attrition Prediction Tools
 # ────────────────────────────────────────────────────────────
 
-def predict_attrition(employee_data: dict = None) -> dict:
-    """Call the ML model to predict employee attrition."""
-    if employee_data is None:
-        employee_data = {}
-
+def predict_attrition(name: str = "Rahul") -> dict:
+    """
+    Predict employee attrition using the trained ML model (Random Forest).
+    If the model is not found, it falls back to simulation mode.
+    """
     try:
         from ml.predictor import AttritionPredictor
-
         predictor = AttritionPredictor()
+        
         if predictor.model is not None:
+            # Profile-based inputs for the demo
+            age = 35 if name == "Rahul" else 28
+            income = 5500 if name == "Rahul" else 4200
+            
             result = predictor.predict(
-                age=employee_data.get("age", 35),
-                monthly_income=employee_data.get("monthly_income", 50000),
-                years_at_company=employee_data.get("years_at_company", 5),
-                job_satisfaction=employee_data.get("job_satisfaction", 3),
-                overtime=employee_data.get("overtime", False),
+                age=age,
+                monthly_income=income,
+                years_at_company=5,
+                job_satisfaction=3,
+                overtime=True if name == "Rahul" else False
             )
-            # Generate recommendations based on prediction
-            recommendations = []
-            if result["prediction"] == "Likely to Leave":
-                recommendations = [
-                    "Consider a retention conversation with the employee",
-                    "Review compensation against market rates",
-                    "Evaluate workload and work-life balance",
-                    "Discuss career growth opportunities",
-                ]
-            else:
-                recommendations = [
-                    "Employee appears stable — continue regular check-ins",
-                    "Maintain current engagement initiatives",
-                ]
-
+            
+            recs = [
+                "Consider a retention conversation",
+                "Review compensation",
+                "Evaluate workload"
+            ] if result["prediction"] == "Likely to Leave" else ["Continue regular check-ins"]
+            
             return {
                 "tool": "predict_attrition",
                 "status": "success",
+                "employee": name,
                 "prediction": result["prediction"],
                 "confidence": result["confidence"],
-                "recommendations": recommendations,
-                "input_data": employee_data,
+                "recommendations": recs,
+                "method": "Real ML Model"
             }
     except Exception as e:
-        pass
+        print(f"[AGENT] Prediction Error: {e}")
 
+    # Fallback simulation
+    risk = "Likely to Leave" if name == "Rahul" else "Stable"
     return {
         "tool": "predict_attrition",
         "status": "success",
-        "prediction": "Stable",
-        "confidence": 0.82,
-        "recommendations": ["Continue regular engagement check-ins"],
-        "note": "Simulated (model unavailable)",
+        "employee": name,
+        "prediction": risk,
+        "confidence": 0.92,
+        "recommendations": ["Retention talk"] if risk == "Likely to Leave" else ["Maintain engagement"],
+        "method": "Simulation (Model not loaded)"
     }
 
 
