@@ -8,7 +8,13 @@
 [![Vite](https://img.shields.io/badge/Vite-Latest-646CFF.svg?logo=vite)](https://vitejs.dev/)
 [![Scikit-learn](https://img.shields.io/badge/Scikit--Learn-1.8+-F7931E.svg?logo=scikit-learn)](https://scikit-learn.org/)
 
-ExecuAI is an intelligent enterprise assistant that doesn't just answer questions—it acts. By leveraging Agentic AI, it understands user intents, plans out execution steps, and autonomously interacts with enterprise systems to automate workflows like onboarding, leave management, and meeting scheduling.
+ExecuAI is an intelligent enterprise assistant that doesn't just answer questions—it acts. By leveraging Agentic AI, it understands user intents, plans out execution steps, and autonomously interacts with enterprise systems to automate workflows.
+
+### ✨ Key Capabilities
+- **10 Autonomous Workflows**: End-to-end automation for Employee Onboarding, IT Provisioning, Access Management, Leave Requests, Meeting Scheduling, IT Tickets, Password Resets, Attrition Prediction, Reminders, and System Health.
+- **Enterprise Integrations**: Native integration with Gmail (SMTP), Slack (Webhooks), Google Calendar (OAuth/Service Accounts), and GitHub (REST API), featuring graceful simulation fallbacks.
+- **NVIDIA NIM Powered**: Natural language response polishing enhanced by `meta/llama-3.1-70b-instruct` via NVIDIA NIM.
+- **Robust Reliability**: Backed by a comprehensive 79-test automated suite validating intents, entities, workflows, and integrations.
 
 ---
 
@@ -80,6 +86,13 @@ cd frontend
 npm install
 npm run dev
 # UI URL: http://localhost:5173
+```
+
+### 6. Run the Test Suite
+
+```bash
+# Run the 79 end-to-end automation tests
+python tests/test_automations.py
 ```
 
 ---
@@ -184,10 +197,11 @@ graph LR
 
 | Component | Technology |
 |-----------|------------|
-| **LLM Engine** | OpenAI API |
+| **LLM Engine** | NVIDIA NIM (`meta/llama-3.1-70b-instruct`) & OpenAI API |
 | **Backend** | Python, FastAPI, SQLAlchemy |
 | **Frontend** | React, Vite |
 | **Database** | SQLite (for development) |
+| **Integrations**| Gmail SMTP, Slack Webhooks, Google Calendar, GitHub API |
 | **Machine Learning**| Scikit-learn (Random Forest) |
 | **Version Control** | Git & GitHub |
 
