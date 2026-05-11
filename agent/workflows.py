@@ -586,6 +586,30 @@ RETENTION_ANALYSIS_WORKFLOW = [
     ),
     _workflow_step("Compiling multi-dimensional HR insight report"),
 ]
+ 
+ 
+# ────────────────────────────────────────────────────────────
+# 20. Direct Messaging / Reminders to Others
+# ────────────────────────────────────────────────────────────
+SEND_MESSAGE_WORKFLOW = [
+    _workflow_step("Identified message request for a colleague"),
+    _workflow_step(
+        "Conveying message via agent",
+        tool="send_notification_email",
+        args_map=lambda e: {
+            "to": e.get("name", "Colleague"),
+            "subject": "Message from Colleague (via ExecuAI)",
+            "body": (
+                f"Hi {e.get('name', 'there')},\n\n"
+                f"I'm ExecuAI, your enterprise assistant. Your colleague asked me to reach out and remind you about the following:\n\n"
+                f"\"{e.get('message', '...')}\"\n\n"
+                f"Is there anything I can help you with regarding this?\n\n"
+                f"Best regards,\n"
+                f"ExecuAI"
+            ),
+        },
+    ),
+]
 
 
 # ── Master mapping: intent → workflow ────────────────────────
@@ -611,6 +635,7 @@ WORKFLOW_MAP = {
     "it_request_assistant": IT_REQUEST_ASSISTANT_WORKFLOW,
     "notification_intelligence": NOTIFICATION_INTELLIGENCE_WORKFLOW,
     "retention_analysis":   RETENTION_ANALYSIS_WORKFLOW,
+    "send_message":         SEND_MESSAGE_WORKFLOW,
 }
 
 # ── Chaining rules: intent → list of follow-up intents ──────

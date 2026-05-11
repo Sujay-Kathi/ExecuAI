@@ -51,9 +51,13 @@ INTENT_TRIGGERS = [
         "retention risk", "will resign", "predict leave",
         "attrition risk",
     ]),
+    ("send_message",         [
+        "tell", "remind", "send a message to", "message to",
+        "inform", "notify", "ping",
+    ]),
     ("notification",         [
-        "remind", "reminder", "notify", "notification",
-        "alert me", "send alert", "upcoming events",
+        "reminder for me", "alert me", "upcoming events",
+        "my notifications",
     ]),
     ("system_health",        [
         "system status", "health check", "system health",
@@ -165,6 +169,11 @@ def extract_entities(text: str, intent: str) -> dict:
     # ── Attrition-specific fields ──
     if intent == "attrition_prediction":
         entities.update(_extract_attrition_fields(lower))
+
+    # ── Message extraction (for reminders/direct pings) ──
+    message = _extract_message(text, intent)
+    if message:
+        entities["message"] = message
 
     return entities
 
@@ -296,3 +305,22 @@ def _extract_attrition_fields(text: str) -> dict:
     if years_match:
         fields["years_at_company"] = int(years_match.group(1))
     return fields
+def _extract_message(text: str, intent: str) -> Optional[str]:
+    """Capture the actual message content for pings/reminders."""
+    if intent != "send_message":
+        return None
+
+    lower = text.lower()
+    # Patterns for: "Remind Rahul to [message]", "Tell Sarah [message]", etc.
+    patterns = [
+        r"remind\s+[\w\s]+\s+(?:to|that|about)\s+(.*)",
+        r"tell\s+[\w\s]+\s+(.*)",
+        r"inform\s+[\w\s]+\s+(?:that|about)\s+(.*)",
+        r"send\s+a\s+message\s+to\s+[\w\s]+\s+(?:saying|that|about)?\s*(.*)",
+        r"message\s+to\s+[\w\s]+\s+(.*)",
+    ]
+    for p in patterns:
+        match = re.search(p, lower)
+        if match:
+            return match.group(1).strip()
+    return None
