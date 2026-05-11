@@ -63,7 +63,7 @@ def main():
             print("\n🌐 Opening browser for Google sign-in...")
             print("   Grant access to Google Calendar when prompted.\n")
             flow = InstalledAppFlow.from_client_secrets_file(OAUTH_FILE, SCOPES)
-            creds = flow.run_local_server(port=0)
+            creds = flow.run_local_server(port=8080)
 
         # Save the token
         with open(TOKEN_FILE, "w") as f:
