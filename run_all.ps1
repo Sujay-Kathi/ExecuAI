@@ -5,7 +5,7 @@ Write-Host "Starting ExecuAI System..." -ForegroundColor Cyan
 
 # 1. Start Backend
 Write-Host "Starting Backend (FastAPI) on port 8000..." -ForegroundColor Green
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "uvicorn backend.main:app --reload"
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "python -m uvicorn backend.main:app --reload"
 
 # 2. Wait for 5 seconds
 Write-Host "Waiting 5 seconds for backend to initialize..." -ForegroundColor Yellow
