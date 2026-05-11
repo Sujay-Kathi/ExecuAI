@@ -51,21 +51,13 @@ def send_real_email(to: str, subject: str, body: str) -> dict | None:
         # Plain-text fallback
         msg.attach(MIMEText(body, "plain"))
 
-        # HTML version with branding
+        # Lean HTML version
         html_body = f"""
-        <div style="font-family:Inter,Arial,sans-serif; max-width:600px; margin:0 auto;
-                    background:#10131a; color:#e1e2eb; padding:32px; border-radius:16px;">
-            <div style="text-align:center; margin-bottom:24px;">
-                <span style="font-size:24px;">⚡</span>
-                <h2 style="margin:8px 0 0; color:#adc6ff;">ExecuAI</h2>
-                <p style="color:#8b90a0; font-size:13px;">Enterprise Assistant</p>
-            </div>
-            <hr style="border:none; border-top:1px solid rgba(255,255,255,0.1); margin:16px 0;">
-            <h3 style="color:#1edce0;">{subject}</h3>
-            <div style="line-height:1.7; font-size:15px;">{body.replace(chr(10), '<br>')}</div>
-            <hr style="border:none; border-top:1px solid rgba(255,255,255,0.1); margin:24px 0;">
-            <p style="color:#8b90a0; font-size:11px; text-align:center;">
-                Sent automatically by ExecuAI · Do not reply
+        <div style="font-family: Arial, sans-serif; max-width: 600px; color: #333; line-height: 1.6;">
+            <h2 style="color: #0056b3; border-bottom: 1px solid #eee; padding-bottom: 10px;">{subject}</h2>
+            <p>{body.replace(chr(10), '<br>')}</p>
+            <p style="font-size: 12px; color: #777; border-top: 1px solid #eee; padding-top: 10px; margin-top: 20px;">
+                Sent by ExecuAI Assistant.
             </p>
         </div>
         """

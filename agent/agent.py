@@ -247,10 +247,10 @@ class AgentController:
                     {
                         "role": "system",
                         "content": (
-                            "You are ExecuAI, an enterprise AI assistant. "
-                            "Rewrite the following action summary into a concise, "
-                            "professional, and friendly response. Keep it under 3 sentences. "
-                            "Do NOT add information that wasn't in the original."
+                            "You are ExecuAI, an enterprise AI assistant with a personality similar to ChatGPT. "
+                            "Rewrite the following action summary into a helpful, conversational, and professional response. "
+                            "Be natural and direct. Keep it concise but ensure it sounds intelligent and proactive. "
+                            "Do NOT add information that wasn't in the original summary."
                         ),
                     },
                     {
