@@ -118,13 +118,7 @@ class AgentController:
         # Primary workflow
         if intent in WORKFLOW_MAP:
             plan.extend(WORKFLOW_MAP[intent])
-        else:
-            # General / unrecognized — create a generic plan
-            plan.append({
-                "action": "Processing your request",
-                "tool": None,
-                "args_map": lambda e: {},
-            })
+        # Note: Unknown intents will result in an empty plan, which is handled in Respond step.
 
         # Check chain rules for composite workflows
         if intent in CHAIN_RULES:
@@ -214,7 +208,7 @@ class AgentController:
         result = self._generate_result_summary(intent, entities, execution)
 
         # Optionally enhance with NVIDIA NIM LLM
-        if self.llm and intent != "general":
+        if self.llm:
             enhanced = self._enhance_with_nim(result, intent, entities)
             if enhanced:
                 result = enhanced
@@ -329,10 +323,11 @@ class AgentController:
             "it_request_assistant": self._build_it_request_summary(execution),
             "notification_intelligence": self._build_notif_intel_summary(execution),
             "retention_analysis": self._build_retention_audit_summary(execution),
+            "general": "Hello! I'm ExecuAI, your enterprise assistant. How can I help you today?",
         }
 
         return summaries.get(intent, (
-            f"Your request has been processed. {success_count}/{total_count} actions completed successfully."
+            "I've processed your request and completed the necessary actions. Is there anything else you need help with?"
         ))
 
     def _build_attrition_summary(self, execution: list, name: str) -> str:
