@@ -71,7 +71,7 @@ ONBOARDING_WORKFLOW = [
         "Sending welcome email",
         tool="send_notification_email",
         args_map=lambda e: {
-            "to": e.get("name", "employee").lower().replace(" ", ".") + "@enterprise.com",
+            "to": e.get("name", "New Employee"),
             "subject": "Welcome to the team!",
             "body": f"Hi {e.get('name', 'there')}, welcome aboard! Your accounts have been set up.",
         },
@@ -194,7 +194,7 @@ LEAVE_REQUEST_WORKFLOW = [
         "Notifying HR manager",
         tool="send_notification_email",
         args_map=lambda e: {
-            "to": "hr@enterprise.com",
+            "to": "Alice Wang", # Resolved to HR Specialist email
             "subject": "New Leave Request",
             "body": f"Employee #{e.get('employee_id', 1)} has requested {e.get('leave_type', 'casual')} leave.",
         },
@@ -224,14 +224,14 @@ MEETING_SCHEDULING_WORKFLOW = [
         args_map=lambda e: {
             "title": e.get("title", "Team Meeting"),
             "organizer": e.get("name", "Organizer"),
-            "attendees": [e.get("recipient", "Team").lower().replace(" ", ".") + "@enterprise.com"]
+            "attendees": [e.get("recipient", "Team")]
         },
     ),
     _workflow_step(
         "Sending meeting invites",
         tool="send_notification_email",
         args_map=lambda e: {
-            "to": e.get("recipient", "team").lower().replace(" ", ".") + "@enterprise.com",
+            "to": e.get("recipient", "Team"),
             "subject": f"Meeting Invite: {e.get('title', 'Team Meeting')}",
             "body": f"Hi {e.get('recipient', 'Team')},\n\nYou are invited to '{e.get('title', 'Team Meeting')}'.",
         },
@@ -273,7 +273,7 @@ IT_TICKET_WORKFLOW = [
         "Notifying user of ticket creation",
         tool="send_notification_email",
         args_map=lambda e: {
-            "to": e.get("name", "user").lower() + "@enterprise.com",
+            "to": e.get("name", "User"),
             "subject": "IT Ticket Created",
             "body": "Your IT support ticket has been created and assigned. We'll get back to you shortly.",
         },
@@ -300,7 +300,7 @@ PASSWORD_RESET_WORKFLOW = [
         "Sending reset link via email",
         tool="send_notification_email",
         args_map=lambda e: {
-            "to": e.get("name", "user").lower().replace(" ", ".") + "@enterprise.com",
+            "to": e.get("name", "User"),
             "subject": "Password Reset Link",
             "body": "Click here to reset your password: https://enterprise.com/reset/abc123",
         },
@@ -356,7 +356,7 @@ NOTIFICATION_WORKFLOW = [
         "Generating reminder notifications",
         tool="send_notification_email",
         args_map=lambda e: {
-            "to": e.get("name", "user").lower().replace(" ", ".") + "@enterprise.com",
+            "to": e.get("name", "User"),
             "subject": "Upcoming Reminders",
             "body": "Here are your upcoming events and tasks.",
         },
@@ -535,7 +535,7 @@ IT_REQUEST_ASSISTANT_WORKFLOW = [
     _workflow_step(
         "Notifying IT administration team",
         tool="send_notification_email",
-        args_map=lambda e: {"to": "it-admin@enterprise.com", "subject": "Software Request", "body": "License requested."},
+        args_map=lambda e: {"to": "John Doe", "subject": "Software Request", "body": "License requested."},
     ),
 ]
 

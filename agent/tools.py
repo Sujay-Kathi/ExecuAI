@@ -306,24 +306,53 @@ def resolve_conflicts(title: str) -> dict:
 # Email & Notification Tools
 # ────────────────────────────────────────────────────────────
 
-def send_notification_email(to: str, subject: str, body: str) -> dict:
-    """Send an email — tries real Gmail SMTP first, then simulation fallback."""
+def send_notification_email(to: str, subject: str, body: str, recipient_name: str = None) -> dict:
+    """
+    Send an email only to verified recipients in the database.
+    Will NOT send to unverified or placeholder addresses.
+    """
     from agent.integrations import send_real_email
+    from backend.database import SessionLocal
+    from backend.models import Employee
 
-    # Automatically resolve generic placeholder emails to the primary user in the database
-    if to in ["user@enterprise.com", "employee@enterprise.com"]:
-        try:
-            from backend.database import SessionLocal
-            from backend.models import Employee
-            db = SessionLocal()
-            # Default to the first employee (the main user)
-            emp = db.query(Employee).first()
-            if emp:
-                to = emp.email
-            db.close()
-        except Exception:
-            pass
+    resolved_email = None
+    db = SessionLocal()
+    
+    # Priority 1: Use recipient_name if provided
+    if recipient_name:
+        emp = db.query(Employee).filter(Employee.name.ilike(f"%{recipient_name}%")).first()
+        if emp:
+            resolved_email = emp.email
+            
+    # Priority 2: If 'to' is not a valid email format, treat it as a name lookup
+    if not resolved_email and to and "@" not in to:
+        emp = db.query(Employee).filter(Employee.name.ilike(f"%{to}%")).first()
+        if emp:
+            resolved_email = emp.email
 
+    # Priority 3: If 'to' is an enterprise.com placeholder, try to resolve it
+    if not resolved_email and to and "@enterprise.com" in to:
+        name_part = to.split("@")[0].replace(".", " ")
+        emp = db.query(Employee).filter(Employee.name.ilike(f"%{name_part}%")).first()
+        if emp:
+            resolved_email = emp.email
+
+    # Priority 4: Check if 'to' itself is in the DB
+    if not resolved_email and to and "@" in to:
+        emp = db.query(Employee).filter(Employee.email == to).first()
+        if emp:
+            resolved_email = emp.email
+
+    db.close()
+
+    if not resolved_email:
+        return {
+            "tool": "send_notification_email",
+            "status": "error",
+            "message": f"Recipient '{recipient_name or to}' not found in database. Email aborted to prevent bounces.",
+        }
+
+    to = resolved_email
     real = send_real_email(to=to, subject=subject, body=body)
     if real:
         return {
