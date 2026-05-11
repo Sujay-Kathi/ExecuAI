@@ -353,6 +353,17 @@ def send_notification_email(to: str, subject: str, body: str, recipient_name: st
         }
 
     to = resolved_email
+
+    # SAFETY CHECK: Do not send real emails to mock '@enterprise.com' addresses.
+    # These are placeholder domains and will bounce back to your sender account (Gmail).
+    if to.endswith("@enterprise.com"):
+        return {
+            "tool": "send_notification_email",
+            "status": "simulated",
+            "to": to,
+            "message": f"Recipient '{to}' uses a placeholder enterprise.com domain. Real email skipped to prevent bounces. Please update the database with a real email address for this person.",
+        }
+
     real = send_real_email(to=to, subject=subject, body=body)
     if real:
         return {
