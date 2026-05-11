@@ -28,7 +28,7 @@ class ChatResponse(BaseModel):
     execution_time: float = 0.0
 
 
-@router.post("/", response_model=ChatResponse)
+@router.post("", response_model=ChatResponse)
 def chat(payload: ChatRequest):
     """
     Main chat endpoint.
