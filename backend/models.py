@@ -98,3 +98,15 @@ class ITTicket(Base):
     assigned_team = Column(String(100), default="General IT Support")
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     resolved_at = Column(DateTime, nullable=True)
+
+
+class Candidate(Base):
+    """Recruitment candidate records."""
+    __tablename__ = "candidates"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(100), nullable=False)
+    email = Column(String(150), unique=True, nullable=False)
+    role = Column(String(100), nullable=False)
+    status = Column(String(50), default="new")  # new | interview_scheduled | offered | hired
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))

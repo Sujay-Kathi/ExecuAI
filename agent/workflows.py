@@ -778,6 +778,96 @@ SEND_MESSAGE_WORKFLOW = [
 ]
 
 
+# ────────────────────────────────────────────────────────────
+# 21. Workforce Insights Dashboard
+# ────────────────────────────────────────────────────────────
+WORKFORCE_INSIGHTS_WORKFLOW = [
+    _workflow_step("Identified analytics request"),
+    _workflow_step(
+        "Fetching employee data",
+        tool="fetch_employee_data",
+    ),
+    _workflow_step(
+        "Fetching leave records",
+        tool="fetch_leave_records",
+    ),
+    _workflow_step(
+        "Calculating workforce metrics",
+        tool="calculate_metrics",
+        args_map=lambda e: {
+            "employees": e.get("employees", []),
+            "leaves": e.get("leaves", []),
+        },
+    ),
+    _workflow_step(
+        "Running attrition prediction model",
+        tool="predict_attrition",
+        args_map=lambda e: {"name": "Workforce Analytics"},
+    ),
+    _workflow_step(
+        "Generating insights report",
+        tool="generate_report",
+        args_map=lambda e: {
+            "metrics": e.get("metrics", {}),
+            "attrition": e.get("detail", {}), # result from previous step
+        },
+    ),
+]
+
+
+# ────────────────────────────────────────────────────────────
+# 22. Recruitment Assistant
+# ────────────────────────────────────────────────────────────
+RECRUITMENT_WORKFLOW = [
+    _workflow_step("Identified recruitment request"),
+    _workflow_step(
+        "Capturing candidate details",
+    ),
+    _workflow_step(
+        "Creating candidate record",
+        tool="add_candidate_record",
+        args_map=lambda e: {
+            "name": e.get("name", "Candidate"),
+            "role": e.get("role", "Applicant"),
+            "email": e.get("email", "candidate@example.com"),
+        },
+    ),
+    _workflow_step(
+        "Scheduling interview",
+        tool="schedule_interview",
+        args_map=lambda e: {
+            "title": f"Interview: {e.get('name', 'Candidate')} for {e.get('role', 'Applicant')}",
+            "attendees": [e.get("email", "candidate@example.com")],
+        },
+    ),
+    _workflow_step(
+        "Sending interview invitation",
+        tool="send_email",
+        args_map=lambda e: {
+            "to": e.get("email", "candidate@example.com"),
+            "subject": "Interview Invitation",
+            "body": f"Hi {e.get('name', 'there')}, you are invited for an interview for the {e.get('role', 'position')} role.",
+        },
+    ),
+    _workflow_step(
+        "Updating candidate status",
+        tool="update_candidate_status",
+        args_map=lambda e: {
+            "candidate_id": e.get("candidate_id", 0),
+            "status": "interview_scheduled",
+        },
+    ),
+    _workflow_step(
+        "Notifying HR team",
+        tool="send_notification",
+        args_map=lambda e: {
+            "text": f"New candidate {e.get('name', 'Candidate')} added and interview scheduled.",
+            "channel": "hr-recruitment",
+        },
+    ),
+]
+
+
 # ── Master mapping: intent → workflow ────────────────────────
 WORKFLOW_MAP = {
     "employee_onboarding":  ONBOARDING_WORKFLOW,
@@ -789,6 +879,8 @@ WORKFLOW_MAP = {
     "attrition_prediction": ATTRITION_PREDICTION_WORKFLOW,
     "notification":         NOTIFICATION_WORKFLOW,
     "system_health":        SYSTEM_HEALTH_WORKFLOW,
+    "workforce_insights":   WORKFORCE_INSIGHTS_WORKFLOW,
+    "recruitment":          RECRUITMENT_WORKFLOW,
 
     # New Features
     "task_management":      TASK_MANAGEMENT_WORKFLOW,

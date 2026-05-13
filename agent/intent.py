@@ -116,6 +116,14 @@ INTENT_TRIGGERS = [
         "deep audit", "retention analysis", "comprehensive report",
         "full insight", "deep dive on employee",
     ]),
+    ("workforce_insights",  [
+        "workforce insights", "headcount", "leave stats", "analytics",
+        "workforce report", "show workforce insights",
+    ]),
+    ("recruitment",         [
+        "add new hire", "add candidate", "recruit", "new candidate",
+        "schedule interview", "hire candidate",
+    ]),
 ]
 
 
