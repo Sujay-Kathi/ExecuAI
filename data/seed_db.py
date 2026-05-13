@@ -27,7 +27,7 @@ def seed_database():
     
     try:
         # 1. Create Employees
-        default_hash = hashlib.sha256("password123".encode()).hexdigest()
+        default_hash = hashlib.sha256("admin123".encode()).hexdigest()
         employees = [
             Employee(name="Sujay Kathi", email="sujaykathi25csds@rnsit.ac.in", role="CEO & Lead Architect", department="Executive", password_hash=default_hash),
             Employee(name="Rahul Kumar", email="rahul@enterprise.com", role="Senior Software Engineer", department="Engineering", password_hash=default_hash),

@@ -244,13 +244,13 @@ function App() {
 
           {seedAccounts.length > 0 && (
             <div className="login-footer">
-              <span>Quick Login Demo Accounts (Password: <strong>password123</strong>)</span>
+              <span>Quick Login Demo Accounts (Password: <strong>admin123</strong>)</span>
               <div className="account-pills">
                 {seedAccounts.map((acc) => (
                   <div
                     key={acc.id}
                     className="account-pill"
-                    onClick={() => { setLoginEmail(acc.email); setLoginPassword('password123'); }}
+                    onClick={() => { setLoginEmail(acc.email); setLoginPassword('admin123'); }}
                     title={`Role: ${acc.role}`}
                   >
                     {acc.name.split(' ')[0]} ({acc.role.split(' ')[0]})
