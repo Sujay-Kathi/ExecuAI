@@ -11,8 +11,25 @@ function App() {
   const [currentIntent, setCurrentIntent] = useState(null);
   const [executionTime, setExecutionTime] = useState(null);
   const [activeStep, setActiveStep] = useState(-1);
+
+  // Authentication State
+  const [user, setUser] = useState(null);
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [loginError, setLoginError] = useState('');
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [seedAccounts, setSeedAccounts] = useState([]);
+
   const chatEndRef = useRef(null);
   const inputRef = useRef(null);
+
+  // Fetch accounts on mount to allow one-click premium testing
+  useEffect(() => {
+    fetch('http://localhost:8000/api/auth/employees')
+      .then(res => res.json())
+      .then(data => setSeedAccounts(data))
+      .catch(err => console.log('Failed to fetch seed accounts', err));
+  }, []);
 
   // Auto-scroll chat
   useEffect(() => {
@@ -53,7 +70,7 @@ function App() {
       const res = await fetch('http://localhost:8000/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: userMessage })
+        body: JSON.stringify({ message: userMessage, user_role: user?.role || 'employee' })
       });
 
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -110,6 +127,53 @@ function App() {
       .replace(/• /g, '<span class="bullet">•</span> ');
   };
 
+  const handleLogin = async (e) => {
+    e?.preventDefault();
+    if (!loginEmail.trim() || !loginPassword) return;
+    setIsLoggingIn(true);
+    setLoginError('');
+    try {
+      const res = await fetch('http://localhost:8000/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: loginEmail.trim(), password: loginPassword })
+      });
+      if (!res.ok) {
+        throw new Error('Invalid email or password');
+      }
+      const data = await res.json();
+      setUser(data);
+      setMessages([
+        { role: 'ai', text: `Welcome back, **${data.name}**! 👋\n\nLogged in as **${data.role}** (${data.department}). Depending on your security clearance, your specific toolset has been loaded.` }
+      ]);
+    } catch (err) {
+      setLoginError(err.message);
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
+
+  const getFilteredActions = () => {
+    if (!user) return [];
+    const r = user.role.toLowerCase();
+    const d = user.department.toLowerCase();
+
+    // CEO / Exec / Manager: Sees everything
+    if (r.includes('ceo') || r.includes('architect') || d.includes('executive') || r.includes('manager')) {
+      return quickActions;
+    }
+    // HR Specialist / HR
+    if (r.includes('hr') || d.includes('human resources')) {
+      return quickActions.filter(a => ['👤 Onboard', '🏥 Leave', '📊 Attrition', '🚀 Master Demo'].includes(a.label));
+    }
+    // IT Administrator / IT Ops
+    if (r.includes('it') || d.includes('it operations')) {
+      return quickActions.filter(a => ['🔑 Reset Pwd', '💚 Health', '💻 Software'].includes(a.label));
+    }
+    // Regular Employee
+    return quickActions.filter(a => ['🏥 Leave', '📋 Tasks', '📝 Summary', '📅 Plan Leave', '📈 Performance', '💡 How-To', '⚡ Optimize', '💻 Software', '🔔 Updates'].includes(a.label));
+  };
+
   const intentLabels = {
     employee_onboarding: { label: 'Onboarding', color: '#1edce0' },
     it_provisioning: { label: 'IT Provisioning', color: '#d7a4ff' },
@@ -133,6 +197,73 @@ function App() {
     general: { label: 'General', color: '#8b90a0' },
   };
 
+  // If not logged in, render Login View
+  if (!user) {
+    return (
+      <div className="login-wrapper">
+        <div className="glass-card login-card">
+          <div className="login-header">
+            <div className="logo-icon">⚡</div>
+            <h2>ExecuAI Access Portal</h2>
+            <p>Secure Enterprise Portal Authentication</p>
+          </div>
+
+          <form className="login-form" onSubmit={handleLogin}>
+            <div className="form-group">
+              <label htmlFor="email">Work Email</label>
+              <input
+                id="email"
+                type="email"
+                placeholder="name@enterprise.com"
+                value={loginEmail}
+                onChange={e => setLoginEmail(e.target.value)}
+                required
+                disabled={isLoggingIn}
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="password">Password</label>
+              <input
+                id="password"
+                type="password"
+                placeholder="••••••••"
+                value={loginPassword}
+                onChange={e => setLoginPassword(e.target.value)}
+                required
+                disabled={isLoggingIn}
+              />
+            </div>
+
+            {loginError && <div className="login-error">{loginError}</div>}
+
+            <button className="primary-btn" type="submit" disabled={isLoggingIn}>
+              {isLoggingIn ? 'Verifying identity...' : 'Authenticate Identity'}
+            </button>
+          </form>
+
+          {seedAccounts.length > 0 && (
+            <div className="login-footer">
+              <span>Quick Login Demo Accounts (Password: <strong>password123</strong>)</span>
+              <div className="account-pills">
+                {seedAccounts.map((acc) => (
+                  <div
+                    key={acc.id}
+                    className="account-pill"
+                    onClick={() => { setLoginEmail(acc.email); setLoginPassword('password123'); }}
+                    title={`Role: ${acc.role}`}
+                  >
+                    {acc.name.split(' ')[0]} ({acc.role.split(' ')[0]})
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="dashboard-container">
       {/* Top Navbar */}
@@ -150,7 +281,18 @@ function App() {
               {intentLabels[currentIntent].label}
             </div>
           )}
-          <div className="avatar">HR</div>
+          <div className="avatar" title={user?.role || 'Guest'}>
+            {user ? user.name.split(' ').map(n => n[0]).join('') : '🔒'}
+          </div>
+          {user && (
+            <button
+              className="quick-btn"
+              style={{ borderColor: 'var(--crimson)', color: 'var(--crimson)' }}
+              onClick={() => setUser(null)}
+            >
+              Sign Out
+            </button>
+          )}
         </div>
       </nav>
 
@@ -191,7 +333,7 @@ function App() {
 
           {/* Quick Actions */}
           <div className="quick-actions" id="quick-actions">
-            {quickActions.map((qa, i) => (
+            {getFilteredActions().map((qa, i) => (
               <button
                 key={i}
                 className="quick-btn"

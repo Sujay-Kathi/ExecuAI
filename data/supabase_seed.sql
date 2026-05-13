@@ -13,6 +13,7 @@ CREATE TABLE employees (
     email VARCHAR(150) UNIQUE NOT NULL,
     role VARCHAR(100) NOT NULL,
     department VARCHAR(100) DEFAULT 'General',
+    password_hash VARCHAR(255),
     date_joined TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -73,13 +74,13 @@ CREATE TABLE it_tickets (
 );
 
 -- Insert Current Employee Accounts
-INSERT INTO employees (name, email, role, department) VALUES
-    ('Sujay Kathi', 'sujaykathi25csds@rnsit.ac.in', 'CEO & Lead Architect', 'Executive'),
-    ('Rahul Kumar', 'rahul@enterprise.com', 'Senior Software Engineer', 'Engineering'),
-    ('Roshni', 'br.roshni0031@gmail.com', 'Product Manager', 'Product'),
-    ('John Doe', 'john.doe@enterprise.com', 'IT Administrator', 'IT Operations'),
-    ('Alice Wang', 'alice.wang@enterprise.com', 'HR Specialist', 'Human Resources'),
-    ('Bob Smith', 'bob.smith@enterprise.com', 'DevOps Engineer', 'Engineering');
+INSERT INTO employees (name, email, role, department, password_hash) VALUES
+    ('Sujay Kathi', 'sujaykathi25csds@rnsit.ac.in', 'CEO & Lead Architect', 'Executive', 'ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f'),
+    ('Rahul Kumar', 'rahul@enterprise.com', 'Senior Software Engineer', 'Engineering', 'ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f'),
+    ('Roshni', 'br.roshni0031@gmail.com', 'Product Manager', 'Product', 'ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f'),
+    ('John Doe', 'john.doe@enterprise.com', 'IT Administrator', 'IT Operations', 'ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f'),
+    ('Alice Wang', 'alice.wang@enterprise.com', 'HR Specialist', 'Human Resources', 'ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f'),
+    ('Bob Smith', 'bob.smith@enterprise.com', 'DevOps Engineer', 'Engineering', 'ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f');
 
 -- Insert Sample Leave Requests
 INSERT INTO leave_requests (employee_id, leave_type, start_date, end_date, reason, status) VALUES

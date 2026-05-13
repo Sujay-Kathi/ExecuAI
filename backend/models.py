@@ -20,6 +20,7 @@ class Employee(Base):
     email = Column(String(150), unique=True, nullable=False)
     role = Column(String(100), nullable=False)
     department = Column(String(100), default="General")
+    password_hash = Column(String(255), nullable=True)
     date_joined = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     leave_requests = relationship("LeaveRequest", back_populates="employee")

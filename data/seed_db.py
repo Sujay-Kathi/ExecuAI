@@ -1,6 +1,7 @@
 
 import os
 import sys
+import hashlib
 from datetime import datetime, timedelta, timezone
 
 # Add project root to path
@@ -26,13 +27,14 @@ def seed_database():
     
     try:
         # 1. Create Employees
+        default_hash = hashlib.sha256("password123".encode()).hexdigest()
         employees = [
-            Employee(name="Sujay Kathi", email="sujaykathi25csds@rnsit.ac.in", role="CEO & Lead Architect", department="Executive"),
-            Employee(name="Rahul Kumar", email="rahul@enterprise.com", role="Senior Software Engineer", department="Engineering"),
-            Employee(name="Roshni", email="br.roshni0031@gmail.com", role="Product Manager", department="Product"),
-            Employee(name="John Doe", email="john.doe@enterprise.com", role="IT Administrator", department="IT Operations"),
-            Employee(name="Alice Wang", email="alice.wang@enterprise.com", role="HR Specialist", department="Human Resources"),
-            Employee(name="Bob Smith", email="bob.smith@enterprise.com", role="DevOps Engineer", department="Engineering"),
+            Employee(name="Sujay Kathi", email="sujaykathi25csds@rnsit.ac.in", role="CEO & Lead Architect", department="Executive", password_hash=default_hash),
+            Employee(name="Rahul Kumar", email="rahul@enterprise.com", role="Senior Software Engineer", department="Engineering", password_hash=default_hash),
+            Employee(name="Roshni", email="br.roshni0031@gmail.com", role="Product Manager", department="Product", password_hash=default_hash),
+            Employee(name="John Doe", email="john.doe@enterprise.com", role="IT Administrator", department="IT Operations", password_hash=default_hash),
+            Employee(name="Alice Wang", email="alice.wang@enterprise.com", role="HR Specialist", department="Human Resources", password_hash=default_hash),
+            Employee(name="Bob Smith", email="bob.smith@enterprise.com", role="DevOps Engineer", department="Engineering", password_hash=default_hash),
         ]
         db.add_all(employees)
         db.commit()

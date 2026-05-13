@@ -25,6 +25,7 @@ from backend.hr.routes import router as hr_router
 from backend.it_admin.routes import router as it_admin_router
 
 # ── Shared routers ───────────────────────────────────
+from backend.auth.routes import router as auth_router
 from backend.routes_chat import router as chat_router
 from backend.routes_ml import router as ml_router
 
@@ -56,6 +57,7 @@ app.include_router(hr_router)
 app.include_router(it_admin_router)
 
 # ── Register shared routers ─────────────────────────
+app.include_router(auth_router)
 app.include_router(chat_router)
 app.include_router(ml_router)
 
