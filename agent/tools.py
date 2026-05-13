@@ -22,74 +22,61 @@ from backend.config import SUPABASE_URL, SUPABASE_KEY
 # ────────────────────────────────────────────────────────────
 
 def create_employee_record(name: str, role: str, department: str) -> dict:
-    """Create an employee record in the database."""
+    """Create or update an employee record in the database."""
+    email = f"{name.lower().replace(' ', '.')}@enterprise.com"
+    emp_id = None
     try:
         from backend.database import SessionLocal
         from backend.models import Employee
 
         db = SessionLocal()
-        email = f"{name.lower().replace(' ', '.')}@enterprise.com"
-        emp = Employee(name=name, email=email, role=role, department=department)
-        db.add(emp)
-        db.commit()
-        db.refresh(emp)
-        emp_id = emp.id
+        # Check if exists
+        emp = db.query(Employee).filter(Employee.email == email).first()
+        if emp:
+            # Update
+            emp.role = role
+            emp.department = department
+            db.commit()
+            db.refresh(emp)
+            emp_id = emp.id
+        else:
+            # Create
+            emp = Employee(name=name, email=email, role=role, department=department)
+            db.add(emp)
+            db.commit()
+            db.refresh(emp)
+            emp_id = emp.id
         db.close()
-        # ── Real-time Sync to Supabase ──
-        supabase_synced = False
-        if SUPABASE_URL and SUPABASE_KEY:
-            try:
-                supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-                supabase.table("employees").insert({
-                    "name": name,
-                    "email": email,
-                    "role": role,
-                    "department": department
-                }).execute()
-                supabase_synced = True
-            except Exception as e:
-                # Non-critical for the local workflow, but we should note it
-                print(f"Supabase sync failed: {e}")
-
-        return {
-            "tool": "create_employee_record",
-            "status": "success",
-            "employee_id": emp_id,
-            "name": name,
-            "email": email,
-            "role": role,
-            "department": department,
-            "supabase_synced": supabase_synced,
-            "message": f"Record created for {name} ({email}) and synced to Supabase" if supabase_synced else f"Record created for {name} ({email})",
-        }
     except Exception as e:
-        # ── Real-time Sync to Supabase (Fallback case) ──
-        supabase_synced = False
-        email = f"{name.lower().replace(' ', '.')}@enterprise.com"
-        if SUPABASE_URL and SUPABASE_KEY:
-            try:
-                supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-                supabase.table("employees").insert({
-                    "name": name,
-                    "email": email,
-                    "role": role,
-                    "department": department
-                }).execute()
-                supabase_synced = True
-            except Exception as e2:
-                print(f"Supabase sync failed: {e2}")
+        print(f"Local DB error: {e}")
 
-        return {
-            "tool": "create_employee_record",
-            "status": "success",
-            "name": name,
-            "email": email,
-            "role": role,
-            "department": department,
-            "supabase_synced": supabase_synced,
-            "note": f"Simulated (DB unavailable: {e})",
-            "message": f"Record created for {name} ({email}) and synced to Supabase" if supabase_synced else f"Record created for {name} ({email})"
-        }
+    # ── Real-time Sync to Supabase ──
+    supabase_synced = False
+    if SUPABASE_URL and SUPABASE_KEY:
+        try:
+            supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+            # Upsert by email
+            supabase.table("employees").upsert({
+                "name": name,
+                "email": email,
+                "role": role,
+                "department": department
+            }, on_conflict="email").execute()
+            supabase_synced = True
+        except Exception as e:
+            print(f"Supabase sync failed: {e}")
+
+    return {
+        "tool": "create_employee_record",
+        "status": "success",
+        "employee_id": emp_id,
+        "name": name,
+        "email": email,
+        "role": role,
+        "department": department,
+        "supabase_synced": supabase_synced,
+        "message": f"Record updated for {name} ({email}) and synced to Supabase" if supabase_synced else f"Record processed for {name} ({email})",
+    }
 
 
 def generate_employee_email(name: str) -> dict:
@@ -137,14 +124,45 @@ def get_employee_info(employee_id: int = 1) -> dict:
 
 
 def assign_role(name: str, role: str, department: str) -> dict:
-    """Assign a role and department to an employee."""
+    """Assign a role and department to an employee and sync to Supabase."""
+    email = f"{name.lower().replace(' ', '.')}@enterprise.com"
+    try:
+        from backend.database import SessionLocal
+        from backend.models import Employee
+
+        db = SessionLocal()
+        emp = db.query(Employee).filter(Employee.name.ilike(f"%{name}%")).first()
+        if emp:
+            emp.role = role
+            emp.department = department
+            db.commit()
+        db.close()
+    except Exception:
+        pass
+
+    # Supabase Sync
+    supabase_synced = False
+    if SUPABASE_URL and SUPABASE_KEY:
+        try:
+            supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+            supabase.table("employees").upsert({
+                "name": name,
+                "email": email,
+                "role": role,
+                "department": department
+            }, on_conflict="email").execute()
+            supabase_synced = True
+        except Exception:
+            pass
+
     return {
         "tool": "assign_role",
         "status": "success",
         "name": name,
         "role": role,
         "department": department,
-        "message": f"{name} assigned as {role} in {department}",
+        "supabase_synced": supabase_synced,
+        "message": f"{name} assigned as {role} in {department} (Synced to Supabase)" if supabase_synced else f"{name} assigned as {role} in {department}",
     }
 
 # Alias for Feature 1
