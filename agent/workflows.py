@@ -683,9 +683,16 @@ SYSTEM_PROVISIONING_WORKFLOW = [
             "body": (
                 f"Hello {e.get('name', 'User')},\n\n"
                 f"Your system setup is complete. You now have access to GitHub, Slack, and internal tools.\n\n"
-                f"CREDENTIALS:\n"
+                f"--- CORPORATE CREDENTIALS ---\n"
                 f"Username: {e.get('employee', {}).get('email', 'Pending')}\n"
-                f"Temporary Password: {e.get('generate_random_password', {}).get('result', 'Welcome@123')}\n\n"
+                f"Password: {e.get('generate_random_password', {}).get('result', 'Welcome@123')}\n\n"
+                f"--- GITHUB ACCESS ---\n"
+                f"Username: {e.get('name', 'user').lower().replace(' ', '_')}_gh\n"
+                f"Password: (Use SSO with Corporate Credentials)\n\n"
+                f"--- SLACK ACCESS ---\n"
+                f"Workspace: ExecuAI-HQ\n"
+                f"Username: {e.get('employee', {}).get('email', 'Pending')}\n"
+                f"Password: (Use SSO with Corporate Credentials)\n\n"
                 f"Please login and change your password immediately."
             )
         },
