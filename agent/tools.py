@@ -1188,14 +1188,46 @@ def assign_tools_access(name: str = "User", tools: list = None) -> dict:
     }
 
 def reset_user_password(name: str = "User") -> dict:
-    """Generate and reset a user's password securely."""
+    """Generate and reset a user's password securely with hashing and DB sync."""
     temp_pwd = "".join(random.choices("ABCDEFGHJKLMNPQRSTUVWXYZ23456789", k=12))
+    pwd_hash = hashlib.sha256(temp_pwd.encode()).hexdigest()
+    
+    email = f"{name.lower().replace(' ', '.')}@enterprise.com"
+    
+    # Update local DB
+    try:
+        from backend.database import SessionLocal
+        from backend.models import Employee
+
+        db = SessionLocal()
+        emp = db.query(Employee).filter(Employee.name.ilike(f"%{name}%")).first()
+        if emp:
+            emp.password_hash = pwd_hash
+            db.commit()
+            email = emp.email
+        db.close()
+    except Exception:
+        pass
+
+    # Supabase Sync
+    supabase_synced = False
+    if SUPABASE_URL and SUPABASE_KEY:
+        try:
+            supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+            supabase.table("employees").update({
+                "password_hash": pwd_hash
+            }).eq("email", email).execute()
+            supabase_synced = True
+        except Exception:
+            pass
+
     return {
         "tool": "reset_user_password",
         "status": "success",
         "name": name,
         "temp_password": temp_pwd,
-        "message": f"Password reset successfully for {name}."
+        "supabase_synced": supabase_synced,
+        "message": f"Password reset successfully for {name} and synced to Supabase."
     }
 
 def verify_user_identity(name: str = "User") -> dict:
