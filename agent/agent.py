@@ -165,10 +165,17 @@ class AgentController:
                     args = args_map(entities)
                     result = self.tools[tool_name](**args)
                     
+<<<<<<< HEAD
                     # Update entities with result so subsequent steps can use them (e.g., password)
                     if isinstance(result, dict) and result.get("status") == "success":
                         entities.update(result)
 
+=======
+                    # Update entities with result for potential use by subsequent steps
+                    if isinstance(result, dict):
+                        entities.update(result)
+                        
+>>>>>>> 53690fd (Fix: Include temporary password and User ID in provisioning email)
                     executed.append({
                         "step": i + 1,
                         "action": action,

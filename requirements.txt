@@ -13,4 +13,5 @@ google-auth-httplib2
 psycopg2-binary==2.9.12
 email-validator
 python-multipart
-requestssupabase
+requests
+supabase
