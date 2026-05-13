@@ -1,5 +1,6 @@
 """
 Authentication routes for handling role-based access.
+Tracks runtime online presence for peer chat integration.
 """
 import hashlib
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -9,6 +10,9 @@ from backend.models import Employee
 from backend.schemas import LoginRequest, EmployeeOut
 
 router = APIRouter(prefix="/api/auth", tags=["Auth"])
+
+# Track live online presence by employee email
+ONLINE_USERS = set()
 
 
 @router.post("/login", response_model=EmployeeOut)
@@ -34,10 +38,30 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
             detail="Invalid email or password"
         )
 
-    return employee
+    # Mark user as online
+    ONLINE_USERS.add(employee.email)
+
+    out = EmployeeOut.model_validate(employee)
+    out.is_online = True
+    return out
+
+
+@router.post("/logout")
+def logout(payload: dict):
+    """Mark user as offline."""
+    email = payload.get("email")
+    if email and email in ONLINE_USERS:
+        ONLINE_USERS.remove(email)
+    return {"status": "ok"}
 
 
 @router.get("/employees", response_model=list[EmployeeOut])
 def list_employees_auth(db: Session = Depends(get_db)):
-    """Convenience endpoint to fetch all active accounts for login dropdowns/testing."""
-    return db.query(Employee).all()
+    """Convenience endpoint to fetch all active accounts with current online presence status."""
+    employees = db.query(Employee).all()
+    results = []
+    for emp in employees:
+        out = EmployeeOut.model_validate(emp)
+        out.is_online = (emp.email in ONLINE_USERS)
+        results.append(out)
+    return results

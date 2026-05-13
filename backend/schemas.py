@@ -26,6 +26,7 @@ class EmployeeOut(BaseModel):
     role: str
     department: str
     date_joined: datetime
+    is_online: Optional[bool] = False
 
     model_config = {"from_attributes": True}
 

@@ -3,7 +3,7 @@ import './App.css';
 
 function App() {
   const [messages, setMessages] = useState([
-    { role: 'ai', text: 'Hello! I am **ExecuAI** — your Enterprise AI Assistant. Try asking anything or initiate direct messaging via:\n\n• "lets chat @[colleague name]"\n• Direct queries on system records' }
+    { role: 'ai', text: 'Hello! I am **ExecuAI** — your Enterprise AI Assistant. Try asking anything or initiate live peer messaging via:\n\n• "lets chat @[colleague name]"\n• Direct queries on system records' }
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -28,13 +28,43 @@ function App() {
   const chatEndRef = useRef(null);
   const inputRef = useRef(null);
 
-  // Fetch accounts on mount to allow one-click premium testing
+  // Fetch accounts on mount and periodically refresh online presence status
   useEffect(() => {
-    fetch('http://localhost:8000/api/auth/employees')
-      .then(res => res.json())
-      .then(data => setSeedAccounts(data))
-      .catch(err => console.log('Failed to fetch seed accounts', err));
+    const fetchAccounts = () => {
+      fetch('http://localhost:8000/api/auth/employees')
+        .then(res => res.json())
+        .then(data => setSeedAccounts(data))
+        .catch(err => console.log('Failed to fetch seed accounts', err));
+    };
+    fetchAccounts();
+    const interval = setInterval(fetchAccounts, 3000);
+    return () => clearInterval(interval);
   }, []);
+
+  // Poll for live incoming real-time peer-to-peer messages
+  useEffect(() => {
+    if (!user) return;
+
+    const pollInterval = setInterval(() => {
+      fetch(`http://localhost:8000/api/chat/peer/poll?email=${encodeURIComponent(user.email)}`)
+        .then(res => res.json())
+        .then(data => {
+          if (Array.isArray(data) && data.length > 0) {
+            data.forEach(msg => {
+              setMessages(prev => [...prev, {
+                role: 'peer',
+                peerName: msg.sender_name,
+                peerRole: msg.sender_role,
+                text: msg.text
+              }]);
+            });
+          }
+        })
+        .catch(() => {});
+    }, 2000);
+
+    return () => clearInterval(pollInterval);
+  }, [user]);
 
   // Auto-scroll chat history
   useEffect(() => {
@@ -55,6 +85,16 @@ function App() {
   const showPeerMenu = input.toLowerCase().includes('lets chat') && input.includes('@') && !peerChatUser;
 
   const selectPeerUser = (peer) => {
+    // Check real presence status: if offline, AI informs user and prevents fake auto-replies
+    if (!peer.is_online) {
+      setMessages(prev => [...prev, {
+        role: 'ai',
+        text: `⚠️ **Personnel Unavailable:** The colleague you are trying to reach (**${peer.name}**) is currently offline/unavailable. Real-time direct feed connection cannot be established until they authenticate their terminal.`
+      }]);
+      setInput('');
+      return;
+    }
+
     setPeerChatUser(peer);
     setInput('');
     setMessages(prev => [...prev, {
@@ -83,29 +123,23 @@ function App() {
 
     const userMessage = input.trim();
 
-    // If live peer-to-peer chat mode is active
+    // If live peer-to-peer chat mode is active, transmit over backend feed directly
     if (peerChatUser) {
       setMessages(prev => [...prev, { role: 'user', text: userMessage, isPeer: true }]);
       setInput('');
-      setIsLoading(true);
 
-      // Simulate human-like peer colleague review & response
-      setTimeout(() => {
-        setIsLoading(false);
-        const replies = [
-          `Hey! Got your message. Let's sync up on this today and finalize the details.`,
-          `Absolutely, I have those records active on my terminal. I will forward them to you shortly!`,
-          `Understood. Let me verify the credentials on my end and get back to you in a few minutes.`,
-          `Thanks for reaching out directly. Let's schedule a quick 5-min huddle to close this loop.`
-        ];
-        const randomReply = replies[Math.floor(Math.random() * replies.length)];
-        setMessages(prev => [...prev, {
-          role: 'peer',
-          peerName: peerChatUser.name,
-          peerRole: peerChatUser.role,
-          text: randomReply
-        }]);
-      }, 1500);
+      fetch('http://localhost:8000/api/chat/peer/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sender_email: user.email,
+          sender_name: user.name,
+          sender_role: user.role,
+          recipient_email: peerChatUser.email,
+          text: userMessage
+        })
+      }).catch(err => console.log('Failed to broadcast peer message', err));
+
       return;
     }
 
@@ -191,6 +225,17 @@ function App() {
     } finally {
       setIsLoggingIn(false);
     }
+  };
+
+  const handleLogout = () => {
+    if (user) {
+      fetch('http://localhost:8000/api/auth/logout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: user.email })
+      }).catch(() => {});
+    }
+    setUser(null);
   };
 
   const intentLabels = {
@@ -298,7 +343,7 @@ function App() {
           <div className="avatar" title={user?.role || 'Guest'}>
             {user ? user.name.split(' ').map(n => n[0]).join('') : 'SK'}
           </div>
-          <button className="btn-ghost" onClick={() => setUser(null)}>
+          <button className="btn-ghost" onClick={handleLogout}>
             Sign out
           </button>
         </div>
@@ -365,7 +410,17 @@ function App() {
                     >
                       <div className="peer-item-avatar">{peer.name[0]}</div>
                       <div className="peer-item-info">
-                        <div className="peer-item-name">{peer.name}</div>
+                        <div className="peer-item-name">
+                          {peer.name}
+                          <span style={{
+                            display: 'inline-block',
+                            width: '6px', height: '6px',
+                            borderRadius: '50%',
+                            background: peer.is_online ? '#10b981' : 'rgba(255,255,255,0.2)',
+                            marginLeft: '6px',
+                            boxShadow: peer.is_online ? '0 0 6px #10b981' : 'none'
+                          }} title={peer.is_online ? "Online" : "Offline"} />
+                        </div>
                         <div className="peer-item-role">{peer.role} • {peer.department}</div>
                       </div>
                     </div>
