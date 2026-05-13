@@ -91,10 +91,10 @@ function App() {
   // Fetch accounts on mount and periodically refresh online presence status
   useEffect(() => {
     const fetchAccounts = () => {
-      fetch('http://localhost:8000/api/auth/employees')
+      fetch('http://localhost:8000/api/auth/employees', { cache: 'no-store' })
         .then(res => res.json())
         .then(data => {
-          if (Array.isArray(data) && data.length > 0) {
+          if (Array.isArray(data)) {
             setSeedAccounts(data);
           }
         })
@@ -509,7 +509,7 @@ function App() {
 
           {seedAccounts.length > 0 && (
             <div style={{ marginTop: '20px', textAlign: 'center' }}>
-              <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.26)' }}>Quick Demo Accounts (Password: <strong>admin123</strong>)</span>
+              <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.26)' }}>Live Active Employees (Default Password: <strong>admin123</strong>)</span>
               <div className="account-pills">
                 {seedAccounts.map((acc) => (
                   <div
