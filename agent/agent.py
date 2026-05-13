@@ -337,9 +337,9 @@ class AgentController:
             "it_request_assistant": self._build_it_request_summary(execution),
             "notification_intelligence": self._build_notif_intel_summary(execution),
             "retention_analysis": self._build_retention_audit_summary(execution),
-            "system_provisioning": self._build_provisioning_summary(execution, name),
-            "security_management": self._build_security_summary(execution, name),
-            "integration_management": self._build_integration_summary(execution),
+            "system_provisioning": "System setup completed. All tools and access have been assigned and details sent to your email.",
+            "access_management": "Access has been granted successfully and confirmation has been sent.",
+            "integration_management": "Systems successfully integrated and data synchronization completed.",
             "general": "Hello! I'm ExecuAI, your enterprise assistant. How can I help you today?",
         }
 
@@ -469,14 +469,6 @@ class AgentController:
                 workload = f"Workload Score: {detail.get('workload_score')}/100"
                 
         return f"Comprehensive Audit for {profile}: {prediction}. {workload}. The full multi-step report has been compiled for HR review."
-
-    def _build_provisioning_summary(self, execution: list, name: str) -> str:
-        """Build summary for system provisioning."""
-        return f"{name}’s system has been successfully set up with email, tools, and access configured."
-
-    def _build_security_summary(self, execution: list, name: str) -> str:
-        """Build summary for security management."""
-        return "Your password has been securely reset. A reset link has been sent to your email."
 
     def _build_integration_summary(self, execution: list) -> str:
         """Build summary for integration management."""

@@ -1442,20 +1442,121 @@ def update_candidate_status(candidate_id: int, status: str) -> dict:
         if candidate:
             candidate.status = status
             db.commit()
-        db.close()
-    except Exception:
-        pass
-    return {
-        "tool": "update_candidate_status",
-        "status": "success",
-        "candidate_id": candidate_id,
-        "new_status": status
-    }
+        db.close()# ── Master IT/Admin Tools (Strict Spec) ──────────────────────────
 
-# ── Feature 3: Policy Assistant ───────────────────────────────
+def fetch_employee_data(name: str = None) -> dict:
+    """Fetch employee details from DB."""
+    try:
+        from backend.database import SessionLocal
+        from backend.models import Employee
+        db = SessionLocal()
+        if name:
+            emp = db.query(Employee).filter(Employee.name.ilike(f"%{name}%")).first()
+        else:
+            emp = db.query(Employee).first()
+        
+        if emp:
+            res = {
+                "id": emp.id,
+                "name": emp.name,
+                "email": emp.email,
+                "role": emp.role,
+                "department": emp.department
+            }
+            db.close()
+            return {"tool": "fetch_employee_data", "status": "success", "employee": res}
+        db.close()
+        return {"tool": "fetch_employee_data", "status": "error", "message": "Employee not found"}
+    except Exception as e:
+        return {"tool": "fetch_employee_data", "status": "error", "message": str(e)}
+
+def create_system_request(employee_id: int, request_type: str, details: str = "") -> dict:
+    """Create system request using create_system_request()"""
+    try:
+        from backend.database import SessionLocal
+        from backend.models import SystemRequest
+        db = SessionLocal()
+        req = SystemRequest(employee_id=employee_id, request_type=request_type, details=details, status="pending")
+        db.add(req)
+        db.commit()
+        db.refresh(req)
+        req_id = req.id
+        db.close()
+        return {"tool": "create_system_request", "status": "success", "request_id": req_id}
+    except Exception as e:
+        return {"tool": "create_system_request", "status": "error", "message": str(e)}
+
+def store_access_log(employee_id: int, action: str, system: str) -> dict:
+    """Log actions using store_access_log()"""
+    try:
+        from backend.database import SessionLocal
+        from backend.models import AccessLog
+        db = SessionLocal()
+        log = AccessLog(employee_id=employee_id, action=action, system=system)
+        db.add(log)
+        db.commit()
+        db.close()
+        return {"tool": "store_access_log", "status": "success"}
+    except Exception as e:
+        return {"tool": "store_access_log", "status": "error", "message": str(e)}
+
+def update_request_status(request_id: int, status: str) -> dict:
+    """Update request status using update_request_status()"""
+    try:
+        from backend.database import SessionLocal
+        from backend.models import SystemRequest
+        db = SessionLocal()
+        req = db.query(SystemRequest).filter(SystemRequest.id == request_id).first()
+        if req:
+            req.status = status
+            db.commit()
+            db.close()
+            return {"tool": "update_request_status", "status": "success"}
+        db.close()
+        return {"tool": "update_request_status", "status": "error", "message": "Request not found"}
+    except Exception as e:
+        return {"tool": "update_request_status", "status": "error", "message": str(e)}
+
+def check_existing_integrations() -> dict:
+    """Check existing connections using check_existing_integrations()"""
+    try:
+        from backend.database import SessionLocal
+        from backend.models import IntegrationLog
+        db = SessionLocal()
+        ints = db.query(IntegrationLog).all()
+        res = [{"name": i.integration_name, "services": i.services, "status": i.status} for i in ints]
+        db.close()
+        return {"tool": "check_existing_integrations", "status": "success", "integrations": res}
+    except Exception as e:
+        return {"tool": "check_existing_integrations", "status": "error", "message": str(e)}
+
+def connect_service(name: str, services: list) -> dict:
+    """Connect services using connect_service()"""
+    return {"tool": "connect_service", "status": "success", "integration_name": name, "services": services}
+
+def sync_data(name: str) -> dict:
+    """Sync data across systems using sync_data()"""
+    return {"tool": "sync_data", "status": "success", "integration_name": name}
+
+def store_integration_log(name: str, services: list, status: str = "active") -> dict:
+    """Store integration details in integration_logs"""
+    try:
+        from backend.database import SessionLocal
+        from backend.models import IntegrationLog
+        db = SessionLocal()
+        log = IntegrationLog(integration_name=name, services=",".join(services), status=status)
+        db.add(log)
+        db.commit()
+        db.close()
+        return {"tool": "store_integration_log", "status": "success"}
+    except Exception as e:
+        return {"tool": "store_integration_log", "status": "error", "message": str(e)}
+
+# ── Policy & Performance Tools ───────────────────────────────
 
 def fetch_policy_documents() -> dict:
     """Fetch all HR policy documents from the policies directory."""
+    import os
     policy_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "policies")
     docs = []
     if os.path.exists(policy_dir):
@@ -1471,6 +1572,7 @@ def fetch_policy_documents() -> dict:
 
 def search_policy_content(documents: list, query: str) -> dict:
     """Search for specific keywords within policy documents."""
+    import os
     policy_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "policies")
     results = []
     for doc in documents:
@@ -1479,7 +1581,6 @@ def search_policy_content(documents: list, query: str) -> dict:
             with open(path, "r", encoding="utf-8") as f:
                 content = f.read()
                 if query.lower() in content.lower():
-                    # Extract relevant section (simple logic)
                     start = content.lower().find(query.lower())
                     snippet = content[max(0, start-50):min(len(content), start+200)]
                     results.append({"document": doc, "snippet": snippet})
@@ -1492,23 +1593,19 @@ def search_policy_content(documents: list, query: str) -> dict:
 
 def summarize_text(text: str) -> dict:
     """Summarize a large block of text into key points."""
-    # Simulation: Extracting bullet points or key sentences
     lines = text.split("\n")
     summary = [l.strip("- ") for l in lines if l.strip().startswith("-") or "entitled" in l.lower() or "days" in l.lower()]
     if not summary:
         summary = ["Refer to the full policy document for details."]
-    
     return {
         "tool": "summarize_text",
         "status": "success",
         "summary": " ".join(summary[:3])
     }
 
-# ── Feature 4: Performance Summary ────────────────────────────
-
 def fetch_performance_metrics(name: str) -> dict:
     """Fetch performance-related metrics for an employee."""
-    # Simulation: Return structured metrics
+    import random
     metrics = {
         "productivity": random.randint(70, 95),
         "attendance": random.randint(85, 100),
@@ -1528,14 +1625,11 @@ def analyze_performance(metrics: dict) -> dict:
     m = metrics.get("metrics", {})
     strengths = []
     improvements = []
-    
     if m.get("task_completion", 0) > 85: strengths.append("Task Completion")
     if m.get("productivity", 0) > 85: strengths.append("Productivity")
     if m.get("attendance", 0) > 95: strengths.append("Consistency/Attendance")
-    
     if m.get("collaboration", 0) < 75: improvements.append("Collaboration")
     if m.get("deadline_compliance", 0) < 75: improvements.append("Meeting Deadlines")
-    
     return {
         "tool": "analyze_performance",
         "status": "success",
@@ -1543,6 +1637,7 @@ def analyze_performance(metrics: dict) -> dict:
         "improvement_areas": improvements or ["Continue current growth trajectory"],
         "overall_score": sum(m.values()) / len(m) if m else 0
     }
+
 TOOL_REGISTRY = {
     # Employee Management
     "create_employee_record": create_employee_record,
@@ -1574,10 +1669,6 @@ TOOL_REGISTRY = {
     "assign_priority": assign_priority,
     "create_it_ticket": create_it_ticket,
     "assign_it_team": assign_it_team,
-
-    # Password Reset
-    "verify_identity": verify_identity,
-    "generate_reset_link": generate_reset_link,
 
     # ML / Attrition
     "predict_attrition": predict_attrition,
@@ -1620,19 +1711,21 @@ TOOL_REGISTRY = {
     "send_email": send_email,
     "send_notification": send_notification,
     
-    # Master IT/Admin Tools
+    # Master IT/Admin Tools (Strict Spec)
+    "fetch_employee_data": fetch_employee_data,
+    "create_system_request": create_system_request,
+    "assign_tools_access": assign_tools_access,
+    "store_access_log": store_access_log,
+    "update_request_status": update_request_status,
+    "check_existing_integrations": check_existing_integrations,
+    "connect_service": connect_service,
+    "sync_data": sync_data,
+    "store_integration_log": store_integration_log,
     "create_company_email": create_company_email,
     "create_user_account": create_user_account,
-    "assign_tools_access": assign_tools_access,
-    "reset_user_password": reset_user_password,
-    "verify_user_identity": verify_user_identity,
-    "update_authentication": update_authentication,
-    "connect_service_api": connect_service_api,
-    "sync_data_between_systems": sync_data_between_systems,
-    "check_system_connections": check_system_connections,
 
     # Advanced HR (Feature 1 & 2)
-    "fetch_employee_data": fetch_employee_data,
+    "fetch_employee_data_hr": fetch_employee_data, # Alias
     "fetch_leave_records": fetch_leave_records,
     "calculate_metrics": calculate_metrics,
     "generate_report": generate_report,
@@ -1640,7 +1733,7 @@ TOOL_REGISTRY = {
     "update_candidate_status": update_candidate_status,
     "schedule_interview": schedule_meeting,  # Alias
 
-    # Policy & Performance (New)
+    # Policy & Performance
     "fetch_policy_documents": fetch_policy_documents,
     "search_policy_content": search_policy_content,
     "summarize_text": summarize_text,

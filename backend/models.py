@@ -113,3 +113,51 @@ class Candidate(Base):
     role = Column(String(100), nullable=False)
     status = Column(String(50), default="new")  # new | interview_scheduled | offered | hired
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+
+# ── Feature 1, 2, 3: IT/Admin Tables ──────────────────────────
+
+class SystemRequest(Base):
+    """Master IT — tracks system provisioning and access requests."""
+    __tablename__ = "system_requests"
+
+    id = Column(Integer, primary_key=True, index=True)
+    employee_id = Column(Integer, ForeignKey("employees.id"), nullable=False)
+    request_type = Column(String(100), nullable=False)  # provisioning | access_control | integration
+    details = Column(Text, default="")
+    status = Column(String(50), default="pending")      # pending | completed | failed
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+
+class AccessLog(Base):
+    """Audit trail for all access-related actions."""
+    __tablename__ = "access_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    employee_id = Column(Integer, ForeignKey("employees.id"), nullable=False)
+    action = Column(String(255), nullable=False)        # e.g. "Granted access to AWS"
+    system = Column(String(100), nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+
+class ToolAssigned(Base):
+    """Inventory of tools assigned to employees."""
+    __tablename__ = "tools_assigned"
+
+    id = Column(Integer, primary_key=True, index=True)
+    employee_id = Column(Integer, ForeignKey("employees.id"), nullable=False)
+    tool_name = Column(String(100), nullable=False)     # e.g. "Slack", "GitHub"
+    access_level = Column(String(50), default="user")
+    assigned_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+
+class IntegrationLog(Base):
+    """Registry of system integrations and their status."""
+    __tablename__ = "integration_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    integration_name = Column(String(200), nullable=False)
+    services = Column(String(255), nullable=False)       # comma-separated services
+    status = Column(String(50), default="active")
+    last_sync = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))

@@ -17,6 +17,9 @@ INTENT_TRIGGERS = [
     ("system_provisioning",  [
         "setup system for", "provision system", "full setup",
     ]),
+    ("access_management",    [
+        "give", "access to", "grant access", "permission for",
+    ]),
     ("integration_management", [
         "connect hr", "integrate system", "sync data between", "link systems",
         "connect services",
@@ -36,11 +39,6 @@ INTENT_TRIGGERS = [
     ("it_provisioning",      [
         "setup system", "provision", "system setup", "it setup",
         "configure workstation", "setup laptop", "setup account",
-    ]),
-    ("access_management",    [
-        "give access", "grant access", "revoke access", "remove access",
-        "access request", "permission", "add to",
-        "grant",  # "Grant Alice access to GitHub" — "grant" alone is specific enough
     ]),
     ("leave_approval",      [
         "approve leave", "reject leave", "authorize leave",
@@ -294,7 +292,7 @@ def _extract_system(text: str) -> Optional[str]:
         "jira", "github", "slack", "aws", "azure", "google workspace",
         "confluence", "bitbucket", "jenkins", "datadog", "grafana",
         "salesforce", "notion", "figma", "trello", "asana",
-        "email", "vpn", "wifi",
+        "email", "vpn", "wifi", "dashboard",
     ]
     for system in known:
         if system in text:

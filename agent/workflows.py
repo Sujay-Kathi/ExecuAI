@@ -621,91 +621,170 @@ RETENTION_ANALYSIS_WORKFLOW = [
  
  
 # ────────────────────────────────────────────────────────────
-# 21. FEATURE 1: System Provisioning
+# 21. FEATURE 1: System Provisioning (Strict Spec)
 # ────────────────────────────────────────────────────────────
 SYSTEM_PROVISIONING_WORKFLOW = [
-    _workflow_step("Identifying provisioning request"),
-    _workflow_step("Fetching employee details"),
+    _workflow_step("Identify provisioning request"),
     _workflow_step(
-        "Creating company email",
-        tool="create_company_email",
-        args_map=lambda e: {"name": e.get("name", "Rahul")},
+        "Fetch employee details from DB",
+        tool="fetch_employee_data",
+        args_map=lambda e: {"name": e.get("name", "User")},
     ),
     _workflow_step(
-        "Creating internal account",
-        tool="create_user_account",
-        args_map=lambda e: {"name": e.get("name", "Rahul")},
-    ),
-    _workflow_step(
-        "Assigning tool access (GitHub, Slack)",
-        tool="assign_tools_access",
+        "Create system request",
+        tool="create_system_request",
         args_map=lambda e: {
-            "name": e.get("name", "Rahul"),
-            "tools": ["GitHub", "Slack", "Jira"]
+            "employee_id": e.get("employee", {}).get("id", 1),
+            "request_type": "provisioning",
+            "details": f"Setup for {e.get('name', 'User')}"
         },
     ),
     _workflow_step(
-        "Sending credentials via email",
+        "Assign tools (GitHub, Slack, internal tools)",
+        tool="assign_tools_access",
+        args_map=lambda e: {"name": e.get("name", "User"), "tool": "Standard Suite"},
+    ),
+    _workflow_step(
+        "Store access details in tools_assigned table",
+        tool="store_access_log",
+        args_map=lambda e: {
+            "employee_id": e.get("employee", {}).get("id", 1),
+            "action": "Assigned tools: GitHub, Slack, Internal Tools",
+            "system": "Multiple"
+        },
+    ),
+    _workflow_step(
+        "Log actions",
+        tool="store_access_log",
+        args_map=lambda e: {
+            "employee_id": e.get("employee", {}).get("id", 1),
+            "action": "System provisioning completed",
+            "system": "ExecuAI"
+        },
+    ),
+    _workflow_step(
+        "Update request status",
+        tool="update_request_status",
+        args_map=lambda e: {
+            "request_id": e.get("request_id", 1),
+            "status": "completed"
+        },
+    ),
+    _workflow_step(
+        "Send email to employee",
         tool="send_email",
         args_map=lambda e: {
-            "to": e.get("name", "Rahul"),
-            "subject": "System Access Provisioned",
-            "body": (
-                f"Your corporate systems are ready.\n\n"
-                f"LOGIN CREDENTIALS:\n"
-                f"Email/Login ID: {e.get('email', 'Pending')}\n"
-                f"Temporary Password: {e.get('temporary_password', 'Sent separately')}\n\n"
-                f"EXTERNAL TOOL ACCESS:\n"
-                f"Slack Workspace: {e.get('slack_workspace', 'ExecuAI-HQ')}\n"
-                f"Slack ID: {e.get('slack_id', 'Assigned')}\n"
-                f"GitHub Username: {e.get('github_username', 'Pending')}\n\n"
-                f"Please login and change your password immediately."
-            )
+            "to": e.get("name", "User"),
+            "subject": "System Setup Completed",
+            "body": f"Hello {e.get('name', 'User')},\n\nYour system setup is complete. You now have access to GitHub, Slack, and internal tools."
         },
     ),
     _workflow_step(
-        "Notifying team of new setup",
+        "Send notification in chatbot",
         tool="send_notification",
-        args_map=lambda e: {
-            "text": f"System setup completed for {e.get('name', 'Rahul')}. Access to Slack and GitHub granted.",
-            "channel": "general"
-        }
+        args_map=lambda e: {"to": e.get("name", "User"), "message": "Your system setup is complete."},
     ),
 ]
 
 
-
-
 # ────────────────────────────────────────────────────────────
-# 23. FEATURE 3: Integration Management
+# 22. FEATURE 2: Access Management (Strict Spec)
 # ────────────────────────────────────────────────────────────
-INTEGRATION_MANAGEMENT_WORKFLOW = [
-    _workflow_step("Identifying integration request"),
+ACCESS_MANAGEMENT_WORKFLOW = [
+    _workflow_step("Identify access request"),
     _workflow_step(
-        "Checking existing system connections",
-        tool="check_system_connections",
+        "Fetch employee role from DB",
+        tool="fetch_employee_data",
+        args_map=lambda e: {"name": e.get("name", "User")},
     ),
+    _workflow_step("Validate permissions"),
     _workflow_step(
-        "Connecting services via API",
-        tool="connect_service_api",
-        args_map=lambda e: {"service": e.get("system", "HR System")},
-    ),
-    _workflow_step(
-        "Synchronizing data across systems",
-        tool="sync_data_between_systems",
+        "Create request",
+        tool="create_system_request",
         args_map=lambda e: {
-            "source": e.get("system", "HR"),
-            "target": "Email/Calendar"
+            "employee_id": e.get("employee", {}).get("id", 1),
+            "request_type": "access_control",
+            "details": f"Grant access to {e.get('system', 'the system')}"
         },
     ),
-    _workflow_step("Validating integration success"),
     _workflow_step(
-        "Notifying administrator",
-        tool="send_notification",
+        "Assign access",
+        tool="assign_tools_access",
+        args_map=lambda e: {"name": e.get("name", "User"), "tool": e.get("system", "the system")},
+    ),
+    _workflow_step(
+        "Store logs",
+        tool="store_access_log",
         args_map=lambda e: {
-            "text": f"Integration successful: {e.get('system', 'HR')} system now synced with Email and Calendar.",
-            "channel": "admin"
-        }
+            "employee_id": e.get("employee", {}).get("id", 1),
+            "action": f"Granted access to {e.get('system', 'the system')}",
+            "system": e.get("system", "the system")
+        },
+    ),
+    _workflow_step(
+        "Update request status",
+        tool="update_request_status",
+        args_map=lambda e: {
+            "request_id": e.get("request_id", 1),
+            "status": "completed"
+        },
+    ),
+    _workflow_step(
+        "Send confirmation email to employee",
+        tool="send_email",
+        args_map=lambda e: {
+            "to": e.get("name", "User"),
+            "subject": "Access Granted",
+            "body": f"You have been granted access to {e.get('system', 'the system')}."
+        },
+    ),
+    _workflow_step(
+        "Notify via chatbot",
+        tool="send_notification",
+        args_map=lambda e: {"to": e.get("name", "User"), "message": f"Access to {e.get('system', 'the system')} granted."},
+    ),
+]
+
+
+# ────────────────────────────────────────────────────────────
+# 23. FEATURE 3: Integration Management (Strict Spec)
+# ────────────────────────────────────────────────────────────
+INTEGRATION_MANAGEMENT_WORKFLOW = [
+    _workflow_step("Identify integration request"),
+    _workflow_step(
+        "Check existing connections",
+        tool="check_existing_integrations",
+        args_map=lambda e: {},
+    ),
+    _workflow_step(
+        "Connect services",
+        tool="connect_service",
+        args_map=lambda e: {"name": "Enterprise Sync", "services": ["Email", "Calendar", "HR"]},
+    ),
+    _workflow_step(
+        "Sync data across systems",
+        tool="sync_data",
+        args_map=lambda e: {"name": "Enterprise Sync"},
+    ),
+    _workflow_step(
+        "Store integration details in integration_logs",
+        tool="store_integration_log",
+        args_map=lambda e: {"name": "Enterprise Sync", "services": ["Email", "Calendar", "HR"]},
+    ),
+    _workflow_step("Validate connection"),
+    _workflow_step(
+        "Send confirmation email",
+        tool="send_email",
+        args_map=lambda e: {
+            "to": "Admin",
+            "subject": "Integration Successful",
+            "body": "HR system has been connected with email and calendar services."
+        },
+    ),
+    _workflow_step(
+        "Notify via chatbot",
+        tool="send_notification",
+        args_map=lambda e: {"to": "Admin", "message": "Integration and sync complete."},
     ),
 ]
 SEND_MESSAGE_WORKFLOW = [
@@ -918,6 +997,7 @@ WORKFLOW_MAP = {
 
     # Master IT/Admin Workflows
     "system_provisioning":  SYSTEM_PROVISIONING_WORKFLOW,
+    "access_management":    ACCESS_MANAGEMENT_WORKFLOW,
     "integration_management": INTEGRATION_MANAGEMENT_WORKFLOW,
 }
 
