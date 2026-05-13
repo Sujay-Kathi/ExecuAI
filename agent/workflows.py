@@ -678,7 +678,7 @@ SYSTEM_PROVISIONING_WORKFLOW = [
         args_map=lambda e: {
             "to": e.get("name", "Rahul"),
             "subject": "System Access Provisioned",
-            "body": "Your corporate systems are ready. Credentials have been generated and securely sent."
+            "body": f"Your corporate systems are ready.\n\nUser ID: {e.get('user_id', 'Pending')}\nTemporary Password: {e.get('temporary_password', 'Sent separately')}\n\nPlease login and change your password immediately."
         },
     ),
     _workflow_step(

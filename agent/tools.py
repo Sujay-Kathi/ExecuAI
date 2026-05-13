@@ -1159,20 +1159,24 @@ def create_user_account(name: str = "User") -> dict:
         db.refresh(emp)
         user_id = f"UID-{emp.id:05d}"
         db.close()
+        temp_pwd = "".join(random.choices("ABCDEFGHJKLMNPQRSTUVWXYZ23456789", k=10))
         return {
             "tool": "create_user_account",
             "status": "success",
             "user_id": user_id,
             "name": name,
-            "message": f"Internal account created for {name} with ID {user_id}."
+            "temporary_password": temp_pwd,
+            "message": f"Internal account created for {name} with ID {user_id}. Temp Password: {temp_pwd}"
         }
     except Exception as e:
+        temp_pwd = "".join(random.choices("ABCDEFGHJKLMNPQRSTUVWXYZ23456789", k=10))
         return {
             "tool": "create_user_account",
             "status": "success",
             "user_id": f"UID-{random.randint(10000, 99999)}",
             "name": name,
-            "message": f"Internal account created for {name} (Simulation: {e})."
+            "temporary_password": temp_pwd,
+            "message": f"Internal account created for {name} (Simulation: {e}). Temp Password: {temp_pwd}"
         }
 
 def assign_tools_access(name: str = "User", tools: list = None) -> dict:
