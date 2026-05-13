@@ -89,9 +89,37 @@ body {
 
 .body {
   display: grid;
-  grid-template-columns: 1.2fr 1fr 280px;
+  grid-template-columns: 1fr 360px;
   flex: 1; min-height: 0;
   position: relative; z-index: 5;
+}
+
+.pipeline-header-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: rgba(255,255,255,0.015);
+  border: 0.5px solid rgba(255,255,255,0.05);
+  padding: 12px 14px;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.stat-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+}
+.stat-row .stat-label {
+  color: rgba(255,255,255,0.26);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.stat-row .stat-val {
+  font-family: 'DM Mono', monospace;
+  color: #c8b4ff;
+  font-weight: 500;
 }
 
 .panel {

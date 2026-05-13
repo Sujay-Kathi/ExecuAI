@@ -432,8 +432,29 @@ function App() {
           </div>
         </div>
 
-        {/* Center panel: Execution Pipeline */}
+        {/* Right panel: Execution Pipeline & Metadata stats */}
         <div className="pipeline-panel">
+          <div className="pipeline-header-stats">
+            <div className="stat-row">
+              <span className="stat-label">Current Intent:</span>
+              <span className="intent-pill" style={{ padding: '2px 8px', fontSize: '11px' }}>
+                {currentIntent ? (intentLabels[currentIntent]?.label || currentIntent) : 'Awaiting input'}
+              </span>
+            </div>
+            <div className="stat-row">
+              <span className="stat-label">Steps Executed:</span>
+              <span className="stat-val">{executionSteps.filter((_, i) => i <= activeStep).length} / {executionSteps.length}</span>
+            </div>
+            {executionTime !== null && (
+              <div className="stat-row">
+                <span className="stat-label">Execution Time:</span>
+                <span className="stat-val">{executionTime.toFixed(2)}s</span>
+              </div>
+            )}
+          </div>
+
+          <div className="divider" style={{ margin: '14px 0 18px 0' }}></div>
+
           <div className="sec-title">Execution pipeline</div>
           {executionSteps.length === 0 ? (
             <div className="pipeline-empty">
@@ -462,34 +483,6 @@ function App() {
               );
             })
           )}
-        </div>
-
-        {/* Rightmost panel: Realtime Status & Agent Metadata */}
-        <div className="sidebar">
-          <div className="stat-block">
-            <span className="stat-label">Agent capabilities</span>
-            <span className="stat-value">10</span>
-            <span className="stat-sub">Workflows active</span>
-          </div>
-          <div className="divider"></div>
-          <div className="stat-block">
-            <span className="stat-label">Current intent</span>
-            <div className="intent-pill">
-              {currentIntent ? (intentLabels[currentIntent]?.label || currentIntent) : 'Awaiting input'}
-            </div>
-          </div>
-          <div className="divider"></div>
-          <div className="stat-block">
-            <span className="stat-label">Steps executed</span>
-            <span className="stat-value">{executionSteps.filter((_, i) => i <= activeStep).length}</span>
-          </div>
-          <div className="divider"></div>
-          <div className="stat-block">
-            <span className="stat-label">Execution time</span>
-            <span className="stat-value" style={{ fontSize: '16px', color: executionTime !== null ? '#c8b4ff' : 'rgba(255,255,255,0.16)' }}>
-              {executionTime !== null ? `${executionTime.toFixed(2)}s` : '—'}
-            </span>
-          </div>
         </div>
       </div>
     </div>
