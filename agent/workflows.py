@@ -951,7 +951,6 @@ PERFORMANCE_SUMMARY_WORKFLOW = [
 ]
 
 
-<<<<<<< HEAD
 LIST_PENDING_LEAVES_WORKFLOW = [
     _workflow_step("Identified pending leave check intent"),
     _workflow_step(
@@ -965,7 +964,9 @@ LIST_PENDING_LEAVES_WORKFLOW = [
             "text": f"Found {e.get('count', 0)} pending leave applications requiring HR review and authorization." if e.get('count', 0) > 0 else "No pending leave applications found in the database queues."
         }
     )
-=======
+]
+
+
 # ────────────────────────────────────────────────────────────
 # 25. Attrition Risk Detection (ML)
 # ────────────────────────────────────────────────────────────
@@ -1026,7 +1027,6 @@ BULK_NOTIFICATION_WORKFLOW = [
             "channel": "general"
         },
     ),
->>>>>>> e7df873f5990a4fe94a3cd18df26e250011cb9d8
 ]
 
 
