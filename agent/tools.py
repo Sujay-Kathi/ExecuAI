@@ -1443,6 +1443,7 @@ def update_candidate_status(candidate_id: int, status: str) -> dict:
             candidate.status = status
             db.commit()
         db.close()
+<<<<<<< HEAD
         return {
             "tool": "update_candidate_status",
             "status": "success",
@@ -1455,6 +1456,11 @@ def update_candidate_status(candidate_id: int, status: str) -> dict:
             "status": "error",
             "message": str(e)
         }
+=======
+        return {"tool": "update_candidate_status", "status": "success", "candidate_id": candidate_id, "new_status": status}
+    except Exception as e:
+        return {"tool": "update_candidate_status", "status": "error", "message": str(e)}
+>>>>>>> b02281a463035363b8f029c4c61bcd79947f6d82
 
 # ── Master IT/Admin Tools (Strict Spec) ──────────────────────────
 
