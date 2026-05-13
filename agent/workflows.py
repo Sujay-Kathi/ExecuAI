@@ -631,6 +631,10 @@ SYSTEM_PROVISIONING_WORKFLOW = [
         args_map=lambda e: {"name": e.get("name", "User")},
     ),
     _workflow_step(
+        "Generate random word-based password",
+        tool="generate_random_password",
+    ),
+    _workflow_step(
         "Create system request",
         tool="create_system_request",
         args_map=lambda e: {
@@ -671,77 +675,39 @@ SYSTEM_PROVISIONING_WORKFLOW = [
         },
     ),
     _workflow_step(
-        "Send email to employee",
+        "Send email to employee with credentials",
         tool="send_email",
         args_map=lambda e: {
             "to": e.get("name", "User"),
-            "subject": "System Setup Completed",
-            "body": f"Hello {e.get('name', 'User')},\n\nYour system setup is complete. You now have access to GitHub, Slack, and internal tools."
+            "subject": "System Setup Completed - Your Credentials",
+            "body": (
+                f"Hello {e.get('name', 'User')},\n\n"
+                f"Your system setup is complete. You now have access to GitHub, Slack, and internal tools.\n\n"
+                f"--- CORPORATE CREDENTIALS ---\n"
+                f"Username: {e.get('employee', {}).get('email', 'Pending')}\n"
+                f"Password: {e.get('generate_random_password', {}).get('result', 'Welcome@123')}\n\n"
+                f"--- GITHUB ACCESS ---\n"
+                f"Username: {e.get('name', 'user').lower().replace(' ', '_')}_gh\n"
+                f"Password: (Use SSO with Corporate Credentials)\n\n"
+                f"--- SLACK ACCESS ---\n"
+                f"Workspace: ExecuAI-HQ\n"
+                f"Username: {e.get('employee', {}).get('email', 'Pending')}\n"
+                f"Password: (Use SSO with Corporate Credentials)\n\n"
+                f"Please login and change your password immediately."
+            )
         },
     ),
     _workflow_step(
         "Send notification in chatbot",
         tool="send_notification",
-        args_map=lambda e: {"to": e.get("name", "User"), "message": "Your system setup is complete."},
-    ),
-]
-
-
-# ────────────────────────────────────────────────────────────
-# 22. FEATURE 2: Access Management (Strict Spec)
-# ────────────────────────────────────────────────────────────
-ACCESS_MANAGEMENT_WORKFLOW = [
-    _workflow_step("Identify access request"),
-    _workflow_step(
-        "Fetch employee role from DB",
-        tool="fetch_employee_data",
-        args_map=lambda e: {"name": e.get("name", "User")},
-    ),
-    _workflow_step("Validate permissions"),
-    _workflow_step(
-        "Create request",
-        tool="create_system_request",
         args_map=lambda e: {
-            "employee_id": e.get("employee", {}).get("id", 1),
-            "request_type": "access_control",
-            "details": f"Grant access to {e.get('system', 'the system')}"
+            "to": e.get("name", "User"), 
+            "message": (
+                f"System setup complete for {e.get('name', 'User')}. "
+                f"Credentials: {e.get('employee', {}).get('email', 'Pending')} / {e.get('generate_random_password', {}).get('result', 'Welcome@123')}. "
+                f"GitHub and Slack have been provisioned via SSO."
+            )
         },
-    ),
-    _workflow_step(
-        "Assign access",
-        tool="assign_tools_access",
-        args_map=lambda e: {"name": e.get("name", "User"), "tool": e.get("system", "the system")},
-    ),
-    _workflow_step(
-        "Store logs",
-        tool="store_access_log",
-        args_map=lambda e: {
-            "employee_id": e.get("employee", {}).get("id", 1),
-            "action": f"Granted access to {e.get('system', 'the system')}",
-            "system": e.get("system", "the system")
-        },
-    ),
-    _workflow_step(
-        "Update request status",
-        tool="update_request_status",
-        args_map=lambda e: {
-            "request_id": e.get("request_id", 1),
-            "status": "completed"
-        },
-    ),
-    _workflow_step(
-        "Send confirmation email to employee",
-        tool="send_email",
-        args_map=lambda e: {
-            "to": e.get("name", "User"),
-            "subject": "Access Granted",
-            "body": f"You have been granted access to {e.get('system', 'the system')}."
-        },
-    ),
-    _workflow_step(
-        "Notify via chatbot",
-        tool="send_notification",
-        args_map=lambda e: {"to": e.get("name", "User"), "message": f"Access to {e.get('system', 'the system')} granted."},
     ),
 ]
 
@@ -771,20 +737,37 @@ INTEGRATION_MANAGEMENT_WORKFLOW = [
         tool="store_integration_log",
         args_map=lambda e: {"name": "Enterprise Sync", "services": ["Email", "Calendar", "HR"]},
     ),
+    _workflow_step(
+        "Fetch employee schedule and work dates",
+        tool="fetch_employee_schedule",
+        args_map=lambda e: {"name": e.get("name") if e.get("name") and e.get("name") != "User" else "Sujay Kathi"},
+    ),
     _workflow_step("Validate connection"),
     _workflow_step(
-        "Send confirmation email",
+        "Send confirmation email with schedule",
         tool="send_email",
         args_map=lambda e: {
-            "to": "Admin",
-            "subject": "Integration Successful",
-            "body": "HR system has been connected with email and calendar services."
+            "to": e.get("name") if e.get("name") and e.get("name") != "User" else "Sujay Kathi",
+            "subject": "Integration Successful - Your Upcoming Schedule",
+            "body": (
+                f"Hello {e.get('name', 'User')},\n\n"
+                f"The HR system has been successfully connected with your email and calendar.\n\n"
+                f"YOUR UPCOMING WORK & MEETING DATES:\n"
+                f"{e.get('fetch_employee_schedule', {}).get('schedule', 'No upcoming events found.')}\n\n"
+                f"Best regards,\nExecuAI IT Team"
+            )
         },
     ),
     _workflow_step(
         "Notify via chatbot",
         tool="send_notification",
-        args_map=lambda e: {"to": "Admin", "message": "Integration and sync complete."},
+        args_map=lambda e: {
+            "to": e.get("name") if e.get("name") and e.get("name") != "User" else "Sujay Kathi", 
+            "message": (
+                f"HR system connected with email and calendar for {e.get('name', 'User')}. "
+                f"Upcoming dates:\n{e.get('fetch_employee_schedule', {}).get('schedule', 'None found.')}"
+            )
+        },
     ),
 ]
 SEND_MESSAGE_WORKFLOW = [
@@ -997,7 +980,6 @@ WORKFLOW_MAP = {
 
     # Master IT/Admin Workflows
     "system_provisioning":  SYSTEM_PROVISIONING_WORKFLOW,
-    "access_management":    ACCESS_MANAGEMENT_WORKFLOW,
     "integration_management": INTEGRATION_MANAGEMENT_WORKFLOW,
 }
 

@@ -337,9 +337,8 @@ class AgentController:
             "it_request_assistant": self._build_it_request_summary(execution),
             "notification_intelligence": self._build_notif_intel_summary(execution),
             "retention_analysis": self._build_retention_audit_summary(execution),
-            "system_provisioning": "System setup completed. All tools and access have been assigned and details sent to your email.",
-            "access_management": "Access has been granted successfully and confirmation has been sent.",
-            "integration_management": "Systems successfully integrated and data synchronization completed.",
+            "system_provisioning": "System setup completed. Credentials and tool access details have been sent to your email and displayed in the notification.",
+            "integration_management": "Systems successfully integrated. Your upcoming schedule and work dates have been synced and sent to your email.",
             "general": "Hello! I'm ExecuAI, your enterprise assistant. How can I help you today?",
         }
 

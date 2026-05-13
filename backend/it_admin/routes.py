@@ -72,47 +72,6 @@ def system_provision(req: ProvisionRequest, background_tasks: BackgroundTasks, d
     db.commit()
     return {"steps": ["Identified provisioning request", "Fetching employee data", "Creating system request", "Assigning tools", "Logging actions", "Sending email notification"], "result": "System setup completed. All tools and access have been assigned and details sent to your email."}
 
-# ── Feature 2: Access Management ──────────────────
-
-@router.post("/access-control")
-def access_control(req: AccessControlRequest, db: Session = Depends(get_db)):
-    """Give an employee access to a specific system."""
-    # 1. Fetch employee
-    emp_data = fetch_employee_data(req.name)
-    if emp_data["status"] == "error":
-        raise HTTPException(status_code=404, detail=emp_data["message"])
-    
-    emp = emp_data["employee"]
-    
-    # 2. Validate permissions (Simulation)
-    if emp["role"] == "Intern" and req.system == "Admin Dashboard":
-         raise HTTPException(status_code=403, detail="Interns cannot access Admin Dashboard")
-    
-    # 3. Create request
-    s_req = create_system_request(emp["id"], "access_control", f"Grant access to {req.system}")
-    req_id = s_req["request_id"]
-    
-    # 4. Assign access
-    assign_tools_access(emp["name"], req.system)
-    t_assigned = ToolAssigned(employee_id=emp["id"], tool_name=req.system)
-    db.add(t_assigned)
-    
-    # 5. Store logs
-    store_access_log(emp["id"], f"Granted access to {req.system}", req.system)
-    
-    # 6. Update status
-    update_request_status(req_id, "completed")
-    
-    # 7. Send email
-    email_body = f"Hello {emp['name']},\n\nYou have been granted access to {req.system}."
-    send_email(emp["name"], "Access Granted", email_body)
-    
-    # 8. Notify
-    send_notification(emp["name"], f"Access to {req.system} granted.")
-    
-    db.commit()
-    return {"steps": ["Identify access request", "Fetch employee role", "Validate permissions", "Create request", "Assign access", "Store logs", "Update status", "Send confirmation email"], "result": "Access has been granted successfully and confirmation has been sent."}
-
 # ── Feature 3: Integration Management ──────────────
 
 @router.post("/integration")
@@ -130,10 +89,34 @@ def integration(req: IntegrationRequest, db: Session = Depends(get_db)):
     # 4. Store log
     store_integration_log(req.name, req.services)
     
-    # 5. Send email
-    send_email("Admin", "Integration Successful", f"Integration '{req.name}' with services {req.services} completed.")
+    # 5. Determine target employee for the email
+    # Use req.name as a name search if it's not a known integration name
+    target_name = req.name
+    if target_name in ["Enterprise Sync", "HR Sync", "Core Integration"]:
+        target_name = "Sujay Kathi" # Default for admin-level requests
+        
+    emp_data = fetch_employee_data(target_name)
+    if emp_data["status"] == "success":
+        emp = emp_data["employee"]
+        # 6. Fetch schedule
+        from agent.tools import fetch_employee_schedule
+        sched = fetch_employee_schedule(emp["name"])
+        
+        # 7. Send email with schedule
+        email_body = (
+            f"Hello {emp['name']},\n\n"
+            f"The HR system has been successfully connected with your email and calendar.\n\n"
+            f"YOUR UPCOMING WORK & MEETING DATES:\n"
+            f"{sched.get('schedule', 'No upcoming events found.')}\n\n"
+            f"Best regards,\nExecuAI IT Team"
+        )
+        send_email(emp["name"], "Integration Successful - Your Upcoming Schedule", email_body)
+        
+        # 8. Notify
+        send_notification(emp["name"], f"Integration {req.name} complete. Your schedule has been sent to your email.")
+    else:
+        # Fallback for Admin
+        send_email("Sujay Kathi", "Integration Successful", f"Integration '{req.name}' with services {req.services} completed.")
+        send_notification("Sujay Kathi", f"Integration {req.name} is now active.")
     
-    # 6. Notify
-    send_notification("Admin", f"Integration {req.name} is now active.")
-    
-    return {"steps": ["Identify integration request", "Check existing connections", "Connect services", "Sync data", "Store integration details", "Validate connection", "Send confirmation email"], "result": "Systems successfully integrated and data synchronization completed."}
+    return {"steps": ["Identify integration request", "Check existing connections", "Connect services", "Sync data", "Store integration details", "Fetch employee schedule", "Send confirmation email with dates"], "result": "Systems successfully integrated and data synchronization completed. Schedule sent to employee email."}

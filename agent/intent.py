@@ -17,12 +17,9 @@ INTENT_TRIGGERS = [
     ("system_provisioning",  [
         "setup system for", "provision system", "full setup",
     ]),
-    ("access_management",    [
-        "give", "access to", "grant access", "permission for",
-    ]),
     ("integration_management", [
         "connect hr", "integrate system", "sync data between", "link systems",
-        "connect services",
+        "connect services", "integrate hr for", "connect hr for",
     ]),
 
     # Policy & Performance (High Priority)
@@ -243,7 +240,7 @@ def _extract_name(text: str, intent: str) -> Optional[str]:
     for keyword in ("onboard", "provision", "hire", "setup system for",
                     "give access to", "grant access to", "grant", "remind", "tell",
                     "to", "with", "for", "message",
-                    "reset password for", "employee"):
+                    "reset password for", "employee", "connect hr for", "integrate hr for"):
         # Match words following the keyword
         pattern = rf"(?i){keyword}\s+([\w\s]+)"
         match = re.search(pattern, text)
