@@ -678,7 +678,17 @@ SYSTEM_PROVISIONING_WORKFLOW = [
         args_map=lambda e: {
             "to": e.get("name", "Rahul"),
             "subject": "System Access Provisioned",
-            "body": f"Your corporate systems are ready.\n\nUser ID: {e.get('user_id', 'Pending')}\nTemporary Password: {e.get('temporary_password', 'Sent separately')}\n\nPlease login and change your password immediately."
+            "body": (
+                f"Your corporate systems are ready.\n\n"
+                f"LOGIN CREDENTIALS:\n"
+                f"Email/Login ID: {e.get('email', 'Pending')}\n"
+                f"Temporary Password: {e.get('temporary_password', 'Sent separately')}\n\n"
+                f"EXTERNAL TOOL ACCESS:\n"
+                f"Slack Workspace: {e.get('slack_workspace', 'ExecuAI-HQ')}\n"
+                f"Slack ID: {e.get('slack_id', 'Assigned')}\n"
+                f"GitHub Username: {e.get('github_username', 'Pending')}\n\n"
+                f"Please login and change your password immediately."
+            )
         },
     ),
     _workflow_step(

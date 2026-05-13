@@ -1183,12 +1183,25 @@ def assign_tools_access(name: str = "User", tools: list = None) -> dict:
     """Assign access to enterprise tools (GitHub, Slack, etc.)."""
     if not tools:
         tools = ["GitHub", "Slack"]
+    
+    # Generate dummy credentials for the assigned tools
+    tool_creds = {}
+    clean_name = name.lower().replace(" ", "")
+    for t in tools:
+        if t.lower() == "github":
+            tool_creds["github_username"] = f"{clean_name}-git"
+            tool_creds["github_access"] = "Full (Repo + Actions)"
+        elif t.lower() == "slack":
+            tool_creds["slack_id"] = f"U{random.randint(10000, 99999)}"
+            tool_creds["slack_workspace"] = "ExecuAI-HQ"
+            
     return {
         "tool": "assign_tools_access",
         "status": "success",
         "name": name,
         "assigned_tools": tools,
-        "message": f"Access granted to: {', '.join(tools)} for {name}."
+        **tool_creds,
+        "message": f"Access granted to: {', '.join(tools)} for {name}. Credentials generated."
     }
 
 def reset_user_password(name: str = "User") -> dict:
