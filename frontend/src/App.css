@@ -167,16 +167,23 @@ body {
   flex-direction: column;
 }
 
+.chat-history {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
 /* Chat Bubbles inside Spacer */
 .chat-bubble {
-  padding: 12px 16px;
-  border-radius: 12px;
-  font-size: 13.5px;
-  line-height: 1.6;
-  max-width: 88%;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  line-height: 1.5;
+  max-width: 85%;
   word-wrap: break-word;
-  margin-bottom: 12px;
   animation: fadeIn 0.3s ease;
+  width: fit-content;
 }
 
 .chat-bubble.user {
