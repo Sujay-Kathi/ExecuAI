@@ -1443,7 +1443,7 @@ def update_candidate_status(candidate_id: int, status: str) -> dict:
             candidate.status = status
             db.commit()
         db.close()
-        return {"tool": "update_candidate_status", "status": "success"}
+        return {"tool": "update_candidate_status", "status": "success", "candidate_id": candidate_id, "new_status": status}
     except Exception as e:
         return {"tool": "update_candidate_status", "status": "error", "message": str(e)}
 
