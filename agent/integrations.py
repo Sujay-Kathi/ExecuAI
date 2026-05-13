@@ -36,6 +36,20 @@ def _log_to_file(msg: str):
     except:
         pass
 
+import threading
+
+def _send_email_thread(smtp_email, smtp_password, to, subject, msg_str):
+    try:
+        with smtplib.SMTP("smtp.gmail.com", 587) as server:
+            server.starttls()
+            server.login(smtp_email, smtp_password)
+            server.sendmail(smtp_email, to, msg_str)
+        _log_to_file(f"SUCCESS: Sent to {to}")
+        logger.info(f"✉️  Real email sent to {to}: {subject}")
+    except Exception as e:
+        _log_to_file(f"ERROR: {to} | {str(e)}")
+        logger.warning(f"Email send failed: {e}")
+
 def send_real_email(to: str, subject: str, body: str) -> dict | None:
     """
     Send an email via Gmail SMTP using an App Password.
@@ -83,18 +97,16 @@ def send_real_email(to: str, subject: str, body: str) -> dict | None:
         """
         msg.attach(MIMEText(html_body, "html"))
 
-        with smtplib.SMTP("smtp.gmail.com", 587) as server:
-            server.starttls()
-            server.login(smtp_email, smtp_password)
-            server.sendmail(smtp_email, to, msg.as_string())
+        threading.Thread(
+            target=_send_email_thread, 
+            args=(smtp_email, smtp_password, to, subject, msg.as_string())
+        ).start()
 
-        _log_to_file(f"SUCCESS: Sent to {to}")
-        logger.info(f"✉️  Real email sent to {to}: {subject}")
-        return {"sent": True, "to": to, "subject": subject, "method": "Gmail SMTP"}
+        return {"sent": True, "to": to, "subject": subject, "method": "Gmail SMTP (Async)"}
 
     except Exception as e:
         _log_to_file(f"ERROR: {to} | {str(e)}")
-        logger.warning(f"Email send failed: {e}")
+        logger.warning(f"Email send preparation failed: {e}")
         return None
 
 
