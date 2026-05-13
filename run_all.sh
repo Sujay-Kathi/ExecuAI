@@ -36,9 +36,9 @@ sleep 5
 
 # 3. Start Frontend
 echo "💻 Starting Frontend (Vite) on port 5173..."
-# Check if node_modules exists in frontend directory
-if [ ! -d "frontend/node_modules" ]; then
-    echo "📦 node_modules not found in frontend. Running npm install..."
+# Check if vite binary exists in node_modules
+if [ ! -f "frontend/node_modules/.bin/vite" ]; then
+    echo "📦 Frontend dependencies or vite binary missing. Running npm install..."
     (cd frontend && npm install)
 fi
 

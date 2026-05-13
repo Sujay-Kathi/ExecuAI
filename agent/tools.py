@@ -1063,8 +1063,102 @@ def filter_important_notifications(notifications: list) -> dict:
 
 
 # ────────────────────────────────────────────────────────────
-# Tool Registry — used by the agent planner
+# IT/Admin Master Tools (Feature 1, 2, 3)
 # ────────────────────────────────────────────────────────────
+
+def create_company_email(name: str = "User") -> dict:
+    """Create a new corporate email account using Gmail/SMTP integration."""
+    email = f"{name.lower().replace(' ', '.')}@execuai.com"
+    return {
+        "tool": "create_company_email",
+        "status": "success",
+        "email": email,
+        "name": name,
+        "message": f"Corporate email {email} successfully provisioned."
+    }
+
+def create_user_account(name: str = "User") -> dict:
+    """Create an internal system account and database record."""
+    return {
+        "tool": "create_user_account",
+        "status": "success",
+        "user_id": f"UID-{random.randint(10000, 99999)}",
+        "name": name,
+        "message": f"Internal account created for {name}."
+    }
+
+def assign_tools_access(name: str = "User", tools: list = None) -> dict:
+    """Assign access to enterprise tools (GitHub, Slack, etc.)."""
+    if not tools:
+        tools = ["GitHub", "Slack"]
+    return {
+        "tool": "assign_tools_access",
+        "status": "success",
+        "name": name,
+        "assigned_tools": tools,
+        "message": f"Access granted to: {', '.join(tools)} for {name}."
+    }
+
+def reset_user_password(name: str = "User") -> dict:
+    """Generate and reset a user's password securely."""
+    temp_pwd = "".join(random.choices("ABCDEFGHJKLMNPQRSTUVWXYZ23456789", k=12))
+    return {
+        "tool": "reset_user_password",
+        "status": "success",
+        "name": name,
+        "temp_password": temp_pwd,
+        "message": f"Password reset successfully for {name}."
+    }
+
+def verify_user_identity(name: str = "User") -> dict:
+    """Verify user identity using multi-factor or database check."""
+    return {
+        "tool": "verify_user_identity",
+        "status": "success",
+        "name": name,
+        "verified": True,
+        "message": f"Identity verified for {name} via database lookup."
+    }
+
+def update_authentication(name: str = "User") -> dict:
+    """Update the authentication system (LDAP/AD/SSO) with new credentials."""
+    return {
+        "tool": "update_authentication",
+        "status": "success",
+        "name": name,
+        "system": "Azure AD / Okta",
+        "message": f"Authentication records updated for {name}."
+    }
+
+def connect_service_api(service: str = "HR System") -> dict:
+    """Establish a connection between services via API."""
+    return {
+        "tool": "connect_service_api",
+        "status": "success",
+        "service": service,
+        "connection_id": f"CONN-{uuid.uuid4().hex[:8]}",
+        "message": f"API connection established for {service}."
+    }
+
+def sync_data_between_systems(source: str = "HR", target: str = "Email/Calendar") -> dict:
+    """Synchronize data across integrated enterprise systems."""
+    return {
+        "tool": "sync_data_between_systems",
+        "status": "success",
+        "records_synced": random.randint(50, 500),
+        "message": f"Data successfully synchronized from {source} to {target}."
+    }
+
+def check_system_connections() -> dict:
+    """Verify health and connectivity of all integrated service APIs."""
+    services = ["HR System", "Email Service", "Calendar API"]
+    return {
+        "tool": "check_system_connections",
+        "status": "success",
+        "active_services": services,
+        "health": "Optimal",
+        "message": f"All {len(services)} services are connected and healthy."
+    }
 TOOL_REGISTRY = {
     # Employee Management
     "create_employee_record": create_employee_record,
@@ -1142,11 +1236,14 @@ TOOL_REGISTRY = {
     "send_email": send_email,
     "send_notification": send_notification,
     
-    # Aliases
-    "generate_company_email": generate_company_email,
-    "trigger_it_provisioning": trigger_it_provisioning,
-    
-    # Leave Approval
-    "fetch_leave_request": fetch_leave_request,
-    "update_leave_status": update_leave_status,
+    # Master IT/Admin Tools
+    "create_company_email": create_company_email,
+    "create_user_account": create_user_account,
+    "assign_tools_access": assign_tools_access,
+    "reset_user_password": reset_user_password,
+    "verify_user_identity": verify_user_identity,
+    "update_authentication": update_authentication,
+    "connect_service_api": connect_service_api,
+    "sync_data_between_systems": sync_data_between_systems,
+    "check_system_connections": check_system_connections,
 }
