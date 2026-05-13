@@ -278,10 +278,13 @@ class AgentController:
                 if mlink:
                     meet_link = f"\nGoogle Meet Link: {mlink}"
 
+        welcome_sent = any(ex.get("tool") == "send_email" and ex["status"] == "success" for ex in execution)
+        welcome_text = "welcome email sent." if welcome_sent else "welcome email skipped (no role mentioned)."
+
         summaries = {
             "employee_onboarding": (
                 f"{name} has been successfully onboarded with all systems configured. "
-                f"Email account created, role assigned, orientation scheduled, and welcome email sent. "
+                f"Email account created, role assigned, orientation scheduled, and {welcome_text} "
                 f"({success_count}/{total_count} steps completed)"
             ),
             "it_provisioning": (

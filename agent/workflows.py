@@ -64,8 +64,9 @@ ONBOARDING_WORKFLOW = [
         args_map=lambda e: {
             "to": e.get("name", "New Employee"),
             "subject": "Welcome to the team!",
-            "body": f"Hi {e.get('name', 'there')}, welcome aboard! Your accounts have been set up.",
+            "body": f"Hi {e.get('name', 'there')}, welcome aboard! Your accounts have been set up as {e.get('role', 'an associate')}.",
         },
+        condition=lambda e: "role" in e and e["role"] != "Associate", # Check if a specific role was mentioned (Associate is the default)
     ),
     _workflow_step(
         "Notifying team",

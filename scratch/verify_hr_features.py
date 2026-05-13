@@ -14,5 +14,6 @@ def test_feature(trigger):
     print("\n")
 
 if __name__ == "__main__":
-    test_feature("Onboard Rahul")
+    test_feature("Onboard Rahul") # Should skip welcome email (no role)
+    test_feature("Onboard Rahul as Senior Engineer") # Should send welcome email
     test_feature("Approve leave for Rahul")
