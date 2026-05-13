@@ -118,10 +118,32 @@ def apply_leave_api(payload: LeaveApplyPayload, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(leave_rec)
     
+    from agent.tools import send_notification_email
+    hr_users = db.query(Employee).filter(Employee.role.ilike("%HR%")).all()
+    emp_name = emp.name if emp else "Employee"
+    for hr in hr_users:
+        msg = {
+            "sender_email": "system@enterprise.com",
+            "sender_name": "System Automations",
+            "sender_role": "System",
+            "recipient_email": hr.email,
+            "text": f"🔔 **New Leave Application**\n{emp_name} has applied for {payload.leave_type} leave.\nReason: {payload.reason}"
+        }
+        if hr.email not in PEER_MESSAGES:
+            PEER_MESSAGES[hr.email] = []
+        PEER_MESSAGES[hr.email].append(msg)
+        
+        send_notification_email(
+            to=hr.email, 
+            subject=f"Leave Request: {emp_name}", 
+            body=f"Please review the leave request from {emp_name}.\nType: {payload.leave_type}\nReason: {payload.reason}",
+            recipient_name=hr.name
+        )
+    
     return {
         "status": "success",
         "leave_id": leave_rec.id,
-        "employee_name": emp.name if emp else "Employee",
+        "employee_name": emp_name,
         "employee_role": emp.role if emp else "Staff",
         "remaining_balance": 12
     }
@@ -152,6 +174,28 @@ def close_leave_api(payload: LeaveClosePayload, db: Session = Depends(get_db)):
     if leave_rec:
         leave_rec.status = payload.status
         db.commit()
+        
+        from agent.tools import send_notification_email
+        applicant = db.query(Employee).filter(Employee.id == leave_rec.employee_id).first()
+        if applicant:
+            msg = {
+                "sender_email": "system@enterprise.com",
+                "sender_name": "HR Review System",
+                "sender_role": "System",
+                "recipient_email": applicant.email,
+                "text": f"📝 **Leave Application {payload.status.capitalize()}**\nYour {leave_rec.leave_type} leave application has been {payload.status} by HR."
+            }
+            if applicant.email not in PEER_MESSAGES:
+                PEER_MESSAGES[applicant.email] = []
+            PEER_MESSAGES[applicant.email].append(msg)
+            
+            send_notification_email(
+                to=applicant.email,
+                subject=f"Leave Application {payload.status.capitalize()}",
+                body=f"Your {leave_rec.leave_type} leave application has been {payload.status} by HR.",
+                recipient_name=applicant.name
+            )
+
         return {"status": "closed", "id": payload.leave_id, "final_status": payload.status}
     return {"status": "not_found"}
 

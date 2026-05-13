@@ -75,7 +75,15 @@ function App() {
               const map = new Map(prev.map(item => [item.id, item]));
               data.forEach(d => {
                 if (!map.has(d.id)) {
-                  map.set(d.id, { ...d, status: 'pending', timestamp: new Date().toLocaleTimeString() });
+                  map.set(d.id, { 
+                    id: d.id,
+                    employeeName: d.employee_name || 'Unknown',
+                    employeeRole: d.employee_role || 'Employee',
+                    leaveType: d.leave_type || 'casual',
+                    reason: d.reason || 'N/A',
+                    status: 'pending', 
+                    timestamp: new Date().toLocaleTimeString() 
+                  });
                 }
               });
               return Array.from(map.values());
@@ -239,54 +247,7 @@ function App() {
 
     const userMessage = input.trim();
 
-    // Intercept Leave Automation flow
-    if (userMessage.toLowerCase().includes('apply leave') || userMessage.toLowerCase().includes('leave')) {
-      setMessages(prev => [...prev, { role: 'user', text: userMessage }]);
-      setInput('');
-      setShowLeaveForm(true);
-      setMessages(prev => [...prev, { 
-        role: 'ai', 
-        text: `📋 **Leave Application Request Triggered:**\n\nPlease fill out the interactive leave application form displayed in your terminal feed below to specify your leave reason and optional leave type. Upon submission, the system will automatically check your remaining balance, record the application in the database, and route a notification + simulated email directly to HR.` 
-      }]);
-      return;
-    }
-
-    // Intercept Reminder & Notification Broadcast flow
-    if (userMessage.toLowerCase().includes('remind') || userMessage.toLowerCase().includes('meeting') || userMessage.toLowerCase().includes('notification')) {
-      setMessages(prev => [...prev, { role: 'user', text: userMessage }]);
-      setInput('');
-      setIsLoading(true);
-      
-      setExecutionSteps([
-        '🔍 Identifying reminder request intent...',
-        '📅 Fetching calendar events from synchronization layer...',
-        '⚙️ Filtering schedule to isolate today\'s active meetings...',
-        '🔔 Generating structured reminders with priority sorting logic...',
-        '📨 Dispatching real-time inline Chatbot Reminders and simulated SMTP Email notice...'
-      ]);
-      setActiveStep(0);
-      
-      setTimeout(() => {
-        setIsLoading(false);
-        setActiveStep(5);
-        setReminderData({
-          count: 3,
-          meetings: [
-            { title: "Executive Leadership Strategy Alignment", time: "10:00 AM", priority: "High", link: "https://meet.google.com/abc-defg-hij" },
-            { title: "Quarterly OKR Review & Resource Allocation", time: "02:00 PM", priority: "High", link: "https://meet.google.com/xyz-uvwx-rst" },
-            { title: "Engineering Sync", time: "04:30 PM", priority: "Normal", link: "https://meet.google.com/qwe-rtyu-iop" }
-          ]
-        });
-        setMessages(prev => [
-          ...prev,
-          { 
-            role: 'ai', 
-            text: `🔔 **Automated Schedule Reminder Broadcast:**\n\nYou have **3 scheduled sessions** active today. \n\n• **Chatbot Broadcast:** Inline interactive schedule reminder widget displayed below.\n• **Email Notice:** Detailed multi-part schedule itinerary successfully routed to your enterprise inbox via simulated SMTP service.` 
-          }
-        ]);
-      }, 1500);
-      return;
-    }
+    // Removed hardcoded frontend interceptors to allow backend AI Agent to handle routing
 
     // If live peer-to-peer chat mode is active, transmit over backend feed directly
     if (peerChatUser) {
@@ -340,6 +301,20 @@ function App() {
       setExecutionTime(data.execution_time || null);
       setActiveStep(data.execution_log?.length || 0);
       setIsLoading(false);
+
+      // Trigger dynamic UI components based on the intelligent backend intent classification
+      if (data.intent === 'leave_request') {
+        setShowLeaveForm(true);
+      } else if (data.intent === 'notification' || data.intent === 'meeting_scheduling') {
+        setReminderData({
+          count: 3,
+          meetings: [
+            { title: "Executive Leadership Strategy Alignment", time: "10:00 AM", priority: "High", link: "https://meet.google.com/abc-defg-hij" },
+            { title: "Quarterly OKR Review & Resource Allocation", time: "02:00 PM", priority: "High", link: "https://meet.google.com/xyz-uvwx-rst" },
+            { title: "Engineering Sync", time: "04:30 PM", priority: "Normal", link: "https://meet.google.com/qwe-rtyu-iop" }
+          ]
+        });
+      }
 
       setMessages(prev => [...prev, {
         role: 'ai',
