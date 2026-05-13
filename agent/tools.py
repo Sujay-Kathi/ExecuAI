@@ -1204,11 +1204,13 @@ def assign_tools_access(name: str = "User", tools: list = None) -> dict:
         if not tools:
             tools = ["GitHub", "Slack"]
             
-        clean_name = name.lower().replace(" ", "")
-        slack_id = f"U{random.randint(10000, 99999)}"
-        github_user = f"{clean_name}-git"
+        clean_name = name.lower().replace(" ", ".")
+        # Proper name-based IDs
+        slack_id = f"{clean_name}.slack"
+        github_user = f"{clean_name}.github"
         
         if emp:
+            # Only generate and save if they don't already exist in DB
             if not emp.slack_id:
                 emp.slack_id = slack_id
             else:
