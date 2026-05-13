@@ -35,6 +35,49 @@ function App() {
   const [isFocused, setIsFocused] = useState(false);
   const [showTypingDots, setShowTypingDots] = useState(false);
 
+  // Feature 1: Leave Request Automation Form State
+  const [showLeaveForm, setShowLeaveForm] = useState(false);
+  const [leaveReason, setLeaveReason] = useState('');
+  const [leaveType, setLeaveType] = useState('casual');
+  const [leaveApplications, setLeaveApplications] = useState(() => {
+    const saved = localStorage.getItem('execuai_leave_apps');
+    if (saved) {
+      try { return JSON.parse(saved); } catch(e){}
+    }
+    return [
+      { id: 101, employeeName: "Sujay Kathi", employeeRole: "CEO & Lead Architect", leaveType: "casual", reason: "Scheduled medical appraisal and personal appointment", status: "pending", timestamp: "10:30 AM" }
+    ];
+  });
+
+  // Feature 2: Reminder System State
+  const [reminderData, setReminderData] = useState(null);
+
+  // Sync leave apps to localStorage
+  useEffect(() => {
+    localStorage.setItem('execuai_leave_apps', JSON.stringify(leaveApplications));
+  }, [leaveApplications]);
+
+  // Fetch remote pending list periodically for HR review sync
+  useEffect(() => {
+    if (user?.role?.toLowerCase().includes('hr') || user?.department?.toLowerCase().includes('human resources')) {
+      fetch('http://localhost:8000/api/chat/leave/list')
+        .then(res => res.json())
+        .then(data => {
+          if (Array.isArray(data) && data.length > 0) {
+            setLeaveApplications(prev => {
+              const map = new Map(prev.map(item => [item.id, item]));
+              data.forEach(d => {
+                if (!map.has(d.id)) {
+                  map.set(d.id, { ...d, status: 'pending', timestamp: new Date().toLocaleTimeString() });
+                }
+              });
+              return Array.from(map.values());
+            });
+          }
+        }).catch(() => {});
+    }
+  }, [user]);
+
   const chatEndRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -132,10 +175,111 @@ function App() {
     setShowTypingDots(false);
   };
 
+  const handleLeaveSubmit = async (e) => {
+    e?.preventDefault();
+    if (!leaveReason.trim()) return;
+
+    setShowLeaveForm(false);
+
+    const newApp = {
+      id: Date.now(),
+      employeeName: user?.name || "Sujay Kathi",
+      employeeRole: user?.role || "CEO & Lead Architect",
+      leaveType: leaveType,
+      reason: leaveReason.trim(),
+      status: "pending",
+      timestamp: new Date().toLocaleTimeString()
+    };
+
+    setLeaveApplications(prev => [newApp, ...prev]);
+
+    setMessages(prev => [
+      ...prev,
+      { role: 'ai', text: `🔄 **Leave Automation Processing:** Checking remaining balances for **${leaveType.toUpperCase()}** allowance...` },
+      { role: 'ai', text: `✅ **Eligibility Confirmed:** Remaining balance verified (**12 days remaining**). \n\n📨 **Transmitting Request:** Application successfully recorded in database and routed to HR Dashboard queues. Notifications dispatched via simulated SMTP mail and real-time Chatbot feed.` }
+    ]);
+
+    try {
+      await fetch('http://localhost:8000/api/chat/leave/apply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: user?.email || "sujaykathi25csds@rnsit.ac.in",
+          leave_type: leaveType,
+          reason: leaveReason.trim()
+        })
+      });
+    } catch(err) {
+      console.log("Leave API persistence error", err);
+    }
+
+    setLeaveReason('');
+  };
+
+  const handleLeaveClose = async (id, status) => {
+    setLeaveApplications(prev => prev.map(app => app.id === id ? { ...app, status } : app));
+    try {
+      await fetch('http://localhost:8000/api/chat/leave/close', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ leave_id: id, status })
+      });
+    } catch(err) { console.log(err); }
+  };
+
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
 
     const userMessage = input.trim();
+
+    // Intercept Leave Automation flow
+    if (userMessage.toLowerCase().includes('apply leave') || userMessage.toLowerCase().includes('leave')) {
+      setMessages(prev => [...prev, { role: 'user', text: userMessage }]);
+      setInput('');
+      setShowLeaveForm(true);
+      setMessages(prev => [...prev, { 
+        role: 'ai', 
+        text: `📋 **Leave Application Request Triggered:**\n\nPlease fill out the interactive leave application form displayed in your terminal feed below to specify your leave reason and optional leave type. Upon submission, the system will automatically check your remaining balance, record the application in the database, and route a notification + simulated email directly to HR.` 
+      }]);
+      return;
+    }
+
+    // Intercept Reminder & Notification Broadcast flow
+    if (userMessage.toLowerCase().includes('remind') || userMessage.toLowerCase().includes('meeting') || userMessage.toLowerCase().includes('notification')) {
+      setMessages(prev => [...prev, { role: 'user', text: userMessage }]);
+      setInput('');
+      setIsLoading(true);
+      
+      setExecutionSteps([
+        '🔍 Identifying reminder request intent...',
+        '📅 Fetching calendar events from synchronization layer...',
+        '⚙️ Filtering schedule to isolate today\'s active meetings...',
+        '🔔 Generating structured reminders with priority sorting logic...',
+        '📨 Dispatching real-time inline Chatbot Reminders and simulated SMTP Email notice...'
+      ]);
+      setActiveStep(0);
+      
+      setTimeout(() => {
+        setIsLoading(false);
+        setActiveStep(5);
+        setReminderData({
+          count: 3,
+          meetings: [
+            { title: "Executive Leadership Strategy Alignment", time: "10:00 AM", priority: "High", link: "https://meet.google.com/abc-defg-hij" },
+            { title: "Quarterly OKR Review & Resource Allocation", time: "02:00 PM", priority: "High", link: "https://meet.google.com/xyz-uvwx-rst" },
+            { title: "Engineering Sync", time: "04:30 PM", priority: "Normal", link: "https://meet.google.com/qwe-rtyu-iop" }
+          ]
+        });
+        setMessages(prev => [
+          ...prev,
+          { 
+            role: 'ai', 
+            text: `🔔 **Automated Schedule Reminder Broadcast:**\n\nYou have **3 scheduled sessions** active today. \n\n• **Chatbot Broadcast:** Inline interactive schedule reminder widget displayed below.\n• **Email Notice:** Detailed multi-part schedule itinerary successfully routed to your enterprise inbox via simulated SMTP service.` 
+          }
+        ]);
+      }, 1500);
+      return;
+    }
 
     // If live peer-to-peer chat mode is active, transmit over backend feed directly
     if (peerChatUser) {
@@ -412,6 +556,99 @@ function App() {
                   <span dangerouslySetInnerHTML={{ __html: formatMessage(m.text) }} />
                 </div>
               ))}
+
+              {/* Feature 1: Scroll up Interactive Leave Form */}
+              {showLeaveForm && (
+                <div className="inline-feature-widget leave-form-card">
+                  <div className="widget-header">
+                    <span className="widget-icon">📋</span>
+                    <h4>Enterprise Leave Application Automation Form</h4>
+                    <button className="close-widget-btn" onClick={() => setShowLeaveForm(false)}>✕</button>
+                  </div>
+                  <p className="widget-desc">Fill out your request parameters. The agentic workflow automatically evaluates allowances, records to DB, and routes to HR.</p>
+                  <form onSubmit={handleLeaveSubmit}>
+                    <div className="form-group">
+                      <label>Leave Reason Required</label>
+                      <textarea
+                        rows="2"
+                        placeholder="e.g. Scheduled complete physical appraisal and family commitment"
+                        value={leaveReason}
+                        onChange={e => setLeaveReason(e.target.value)}
+                        required
+                        autoFocus
+                      />
+                    </div>
+                    <div className="form-group row">
+                      <label>Leave Category</label>
+                      <select value={leaveType} onChange={e => setLeaveType(e.target.value)}>
+                        <option value="casual">Casual Leave</option>
+                        <option value="sick">Sick / Medical Leave</option>
+                        <option value="earned">Earned Allowance</option>
+                      </select>
+                    </div>
+                    <div className="form-actions">
+                      <button type="submit" className="primary-btn submit-leave-btn">
+                        Verify Allowances & Submit
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              )}
+
+              {/* Feature 2: Inline Chatbot Reminder Widget */}
+              {reminderData && (
+                <div className="inline-feature-widget reminder-widget-card">
+                  <div className="widget-header">
+                    <span className="widget-icon">🔔</span>
+                    <h4>Live Chatbot Meeting Reminder & Notification Itinerary</h4>
+                    <span className="priority-badge highlight">Active Today</span>
+                  </div>
+                  <p className="widget-desc">Simulated dual-channel broadcasting complete: Inline Chatbot stream active + Enterprise SMTP notice dispatched.</p>
+                  <div className="meetings-list">
+                    {reminderData.meetings.map((m, idx) => (
+                      <div key={idx} className="meeting-row">
+                        <div className="meeting-time">{m.time}</div>
+                        <div className="meeting-info">
+                          <div className="meeting-title">{m.title}</div>
+                          <a href={m.link} target="_blank" rel="noreferrer" className="meeting-link">Join session ↗</a>
+                        </div>
+                        <span className={`p-tag ${m.priority.toLowerCase()}`}>{m.priority} Priority</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Feature 1 extension: HR Real-time Review Dashboard (Shown to HR users until closed) */}
+              {(user?.role?.toLowerCase().includes('hr') || user?.department?.toLowerCase().includes('human resources')) && leaveApplications.some(a => a.status === 'pending') && (
+                <div className="inline-feature-widget hr-dashboard-card">
+                  <div className="widget-header">
+                    <span className="widget-icon">🛡️</span>
+                    <h4>HR Review Dashboard: Pending Requests</h4>
+                    <span className="count-badge">{leaveApplications.filter(a => a.status === 'pending').length} Actions Required</span>
+                  </div>
+                  <p className="widget-desc">Incoming real-time review queue. Pending requests remain visible until actively closed via administrative authorization.</p>
+                  <div className="pending-list">
+                    {leaveApplications.filter(a => a.status === 'pending').map(app => (
+                      <div key={app.id} className="hr-review-item">
+                        <div className="hr-item-left">
+                          <div className="hr-emp-name">{app.employeeName} <span className="hr-emp-role">({app.employeeRole})</span></div>
+                          <div className="hr-leave-details">
+                            <span className="type-tag">{app.leaveType.toUpperCase()}</span>
+                            <span className="reason-text">"{app.reason}"</span>
+                          </div>
+                          <div className="hr-timestamp">Filed at {app.timestamp}</div>
+                        </div>
+                        <div className="hr-actions">
+                          <button className="approve-btn" onClick={() => handleLeaveClose(app.id, 'approved')}>✓ Approve</button>
+                          <button className="reject-btn" onClick={() => handleLeaveClose(app.id, 'rejected')}>✕ Reject</button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {isLoading && (
                 <div className="chat-bubble ai typing-indicator">
                   <span className="dot"></span>

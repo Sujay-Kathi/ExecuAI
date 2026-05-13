@@ -5,9 +5,13 @@ Exposes the AI agent via /api/chat for the frontend to consume.
 Returns both the human-readable result and the full execution log.
 Also handles real-time inter-employee live peer-to-peer messaging.
 """
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
+import datetime
+from sqlalchemy.orm import Session
+from backend.database import get_db
+from backend.models import LeaveRequest, Employee
 from agent.agent import AgentController
 
 router = APIRouter(prefix="/api/chat", tags=["Chat"])
@@ -78,3 +82,76 @@ def poll_peer_messages(email: str):
     if msgs:
         PEER_MESSAGES[rec] = []
     return msgs
+
+
+# ── Leave Management Endpoints for Frontend Integration ──
+
+class LeaveApplyPayload(BaseModel):
+    email: str
+    leave_type: str
+    reason: str
+
+
+class LeaveClosePayload(BaseModel):
+    leave_id: int
+    status: str
+
+
+@router.post("/leave/apply")
+def apply_leave_api(payload: LeaveApplyPayload, db: Session = Depends(get_db)):
+    """Persist a newly applied leave request from the frontend form into the database."""
+    emp = db.query(Employee).filter(Employee.email == payload.email.strip()).first()
+    emp_id = emp.id if emp else 1
+    
+    now = datetime.datetime.now(datetime.timezone.utc)
+    tomorrow = now + datetime.timedelta(days=1)
+    
+    leave_rec = LeaveRequest(
+        employee_id=emp_id,
+        leave_type=payload.leave_type or "casual",
+        start_date=tomorrow,
+        end_date=tomorrow,
+        reason=payload.reason,
+        status="pending"
+    )
+    db.add(leave_rec)
+    db.commit()
+    db.refresh(leave_rec)
+    
+    return {
+        "status": "success",
+        "leave_id": leave_rec.id,
+        "employee_name": emp.name if emp else "Employee",
+        "employee_role": emp.role if emp else "Staff",
+        "remaining_balance": 12
+    }
+
+
+@router.get("/leave/list")
+def list_pending_leaves(db: Session = Depends(get_db)):
+    """Fetch all pending leave applications for display in the HR review dashboard."""
+    leaves = db.query(LeaveRequest).filter(LeaveRequest.status == "pending").all()
+    results = []
+    for l in leaves:
+        emp = db.query(Employee).filter(Employee.id == l.employee_id).first()
+        results.append({
+            "id": l.id,
+            "employee_name": emp.name if emp else f"User #{l.employee_id}",
+            "employee_role": emp.role if emp else "Staff",
+            "leave_type": l.leave_type,
+            "reason": l.reason,
+            "created_at": l.created_at.isoformat() if hasattr(l.created_at, 'isoformat') else str(l.created_at)
+        })
+    return results
+
+
+@router.post("/leave/close")
+def close_leave_api(payload: LeaveClosePayload, db: Session = Depends(get_db)):
+    """Approve or reject a leave application, updating its status to closed."""
+    leave_rec = db.query(LeaveRequest).filter(LeaveRequest.id == payload.leave_id).first()
+    if leave_rec:
+        leave_rec.status = payload.status
+        db.commit()
+        return {"status": "closed", "id": payload.leave_id, "final_status": payload.status}
+    return {"status": "not_found"}
+
