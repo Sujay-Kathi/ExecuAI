@@ -262,6 +262,21 @@ def schedule_meeting(title: str, organizer: str = "System", attendees: list[str]
         result["meeting_id"] = meeting_id
     if gcal:
         result["calendar_link"] = gcal.get("link", "")
+        if gcal.get("meet_link"):
+            result["meet_link"] = gcal.get("meet_link")
+
+    if attendees:
+        meet_info = f"\nGoogle Meet Link: {result.get('meet_link')}" if result.get('meet_link') else ""
+        body = f"You have been invited to a meeting: {title}\nTime: {meeting_time.strftime('%Y-%m-%d %H:%M UTC')}\nOrganizer: {organizer}{meet_info}"
+        result["email_status"] = {}
+        for attendee in attendees:
+            email_res = send_notification_email(
+                to=attendee,
+                subject=f"Meeting Invitation: {title}",
+                body=body
+            )
+            result["email_status"][attendee] = email_res.get("status")
+
     return result
 
 

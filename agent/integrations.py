@@ -12,6 +12,7 @@ Supported services:
   - GitHub (Personal Access Token)
 """
 import os
+import uuid
 import json
 import smtplib
 import logging
@@ -179,6 +180,12 @@ def create_real_calendar_event(
         "description": description or f"Scheduled by ExecuAI Agent",
         "start": {"dateTime": start_time.isoformat(), "timeZone": "UTC"},
         "end": {"dateTime": end_time.isoformat(), "timeZone": "UTC"},
+        "conferenceData": {
+            "createRequest": {
+                "requestId": f"execuai-{uuid.uuid4().hex[:8]}",
+                "conferenceSolutionKey": {"type": "hangoutsMeet"}
+            }
+        }
     }
 
     if attendees:
@@ -186,7 +193,7 @@ def create_real_calendar_event(
 
     try:
         event = service.events().insert(
-            calendarId=calendar_id, body=event_body, sendUpdates="all"
+            calendarId=calendar_id, body=event_body, sendUpdates="all", conferenceDataVersion=1
         ).execute()
 
         logger.info(f"📅 Real calendar event created: {event.get('htmlLink')}")
@@ -194,6 +201,7 @@ def create_real_calendar_event(
             "created": True,
             "event_id": event.get("id"),
             "link": event.get("htmlLink"),
+            "meet_link": event.get("hangoutLink"),
             "title": title,
             "start": start_time.isoformat(),
             "method": "Google Calendar API",
