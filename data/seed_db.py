@@ -27,9 +27,9 @@ def seed_database():
     try:
         # 1. Create Employees
         employees = [
-            Employee(name="Sujay Kathi", email="sujay@enterprise.com", role="CEO & Lead Architect", department="Executive"),
+            Employee(name="Sujay Kathi", email="sujaykathi25csds@rnsit.ac.in", role="CEO & Lead Architect", department="Executive"),
             Employee(name="Rahul Kumar", email="rahul@enterprise.com", role="Senior Software Engineer", department="Engineering"),
-            Employee(name="Sarah Jenkins", email="sarah@enterprise.com", role="Product Manager", department="Product"),
+            Employee(name="Roshni", email="br.roshni0031@gmail.com", role="Product Manager", department="Product"),
             Employee(name="John Doe", email="john.doe@enterprise.com", role="IT Administrator", department="IT Operations"),
             Employee(name="Alice Wang", email="alice.wang@enterprise.com", role="HR Specialist", department="Human Resources"),
             Employee(name="Bob Smith", email="bob.smith@enterprise.com", role="DevOps Engineer", department="Engineering"),

@@ -28,29 +28,31 @@ logger = logging.getLogger(__name__)
 # Gmail SMTP Integration
 # ────────────────────────────────────────────────────────────
 
+def _log_to_file(msg: str):
+    try:
+        with open("email_debug.log", "a", encoding="utf-8") as f:
+            f.write(f"[{datetime.now()}] {msg}\n")
+    except:
+        pass
+
 def send_real_email(to: str, subject: str, body: str) -> dict | None:
     """
     Send an email via Gmail SMTP using an App Password.
-
-    Required env vars:
-        SMTP_EMAIL        – your Gmail address
-        SMTP_APP_PASSWORD – 16-char App Password (not your login pw)
-
-    Returns dict on success, None on failure/missing creds.
     """
     smtp_email = os.getenv("SMTP_EMAIL", "")
     smtp_password = os.getenv("SMTP_APP_PASSWORD", "")
 
     if not smtp_email or not smtp_password:
+        _log_to_file(f"MISSING CREDS: Attempt to {to}")
         return None
 
     try:
+        _log_to_file(f"ATTEMPT: Sending to {to} | Subject: {subject}")
         msg = MIMEMultipart("alternative")
         msg["From"] = f"ExecuAI <{smtp_email}>"
         msg["To"] = to
         msg["Subject"] = subject
 
-        # Plain-text fallback
         msg.attach(MIMEText(body, "plain"))
 
         # Premium Dark HTML version
@@ -85,10 +87,12 @@ def send_real_email(to: str, subject: str, body: str) -> dict | None:
             server.login(smtp_email, smtp_password)
             server.sendmail(smtp_email, to, msg.as_string())
 
+        _log_to_file(f"SUCCESS: Sent to {to}")
         logger.info(f"✉️  Real email sent to {to}: {subject}")
         return {"sent": True, "to": to, "subject": subject, "method": "Gmail SMTP"}
 
     except Exception as e:
+        _log_to_file(f"ERROR: {to} | {str(e)}")
         logger.warning(f"Email send failed: {e}")
         return None
 
