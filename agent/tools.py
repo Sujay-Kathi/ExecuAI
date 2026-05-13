@@ -1038,15 +1038,26 @@ def analyze_performance_trends(data: dict) -> dict:
 # ────────────────────────────────────────────────────────────
 
 def search_knowledge_base(query: str) -> dict:
-    """Search company knowledge base for procedures and policies."""
+    """Search company knowledge base (strictly the policies folder) for procedures."""
+    import os
+    policy_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "policies")
+    results = []
+    if os.path.exists(policy_dir):
+        for f in os.listdir(policy_dir):
+            if f.endswith(".md"):
+                with open(os.path.join(policy_dir, f), "r", encoding="utf-8") as file:
+                    content = file.read()
+                    if query.lower() in content.lower():
+                        results.append({"title": f, "snippet": content[:200] + "..."})
+    
+    if not results:
+        results = [{"title": "General Info", "snippet": f"No specific policy found for '{query}'. Please contact HR."}]
+        
     return {
         "tool": "search_knowledge_base",
         "status": "success",
         "query": query,
-        "results": [
-            {"title": "Reimbursement Policy", "snippet": "Submit all receipts within 30 days via the Finance portal..."},
-            {"title": "Travel Guidelines", "snippet": "Book flights 2 weeks in advance for domestic travel..."},
-        ]
+        "results": results
     }
 
 
