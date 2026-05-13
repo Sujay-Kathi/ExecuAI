@@ -24,7 +24,7 @@ function App() {
     if (isLoading && executionSteps.length > 0 && activeStep < executionSteps.length - 1) {
       const timer = setTimeout(() => {
         setActiveStep(prev => prev + 1);
-      }, 400);
+      }, 0);
       return () => clearTimeout(timer);
     }
   }, [isLoading, activeStep, executionSteps]);

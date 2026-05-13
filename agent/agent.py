@@ -271,6 +271,13 @@ class AgentController:
         success_count = sum(1 for ex in execution if ex["status"] == "success")
         total_count = len(execution)
 
+        meet_link = ""
+        for ex in execution:
+            if ex.get("tool") == "schedule_meeting" and isinstance(ex.get("detail"), dict):
+                mlink = ex["detail"].get("meet_link")
+                if mlink:
+                    meet_link = f"\nGoogle Meet Link: {mlink}"
+
         summaries = {
             "employee_onboarding": (
                 f"{name} has been successfully onboarded with all systems configured. "
@@ -294,7 +301,7 @@ class AgentController:
             ),
             "meeting_scheduling": (
                 f"'{title}' has been scheduled successfully. "
-                f"Calendar invites have been sent to all participants. "
+                f"Calendar invites have been sent to all participants.{meet_link} "
                 f"({success_count}/{total_count} steps completed)"
             ),
             "it_ticket": (

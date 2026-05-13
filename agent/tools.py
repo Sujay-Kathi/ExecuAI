@@ -264,6 +264,10 @@ def schedule_meeting(title: str, organizer: str = "System", attendees: list[str]
         result["calendar_link"] = gcal.get("link", "")
         if gcal.get("meet_link"):
             result["meet_link"] = gcal.get("meet_link")
+    else:
+        import uuid
+        result["calendar_link"] = "https://calendar.google.com/simulated"
+        result["meet_link"] = f"https://meet.google.com/simulated-{uuid.uuid4().hex[:8]}"
 
     if attendees:
         meet_info = f"\nGoogle Meet Link: {result.get('meet_link')}" if result.get('meet_link') else ""
