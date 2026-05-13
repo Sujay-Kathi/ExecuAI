@@ -1,6 +1,13 @@
 # ExecuAI - Startup Script
 # This script starts both the Backend (FastAPI) and Frontend (Vite)
 
+# Check if .venv exists in current directory
+if (-not (Test-Path ".venv")) {
+    Write-Host "❌ Error: .venv folder not found in current directory." -ForegroundColor Red
+    Write-Host "Please run this script from the project root directory." -ForegroundColor Yellow
+    exit
+}
+
 Write-Host "Starting ExecuAI System..." -ForegroundColor Cyan
 
 # 1. Start Backend

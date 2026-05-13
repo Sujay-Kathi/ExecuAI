@@ -1,5 +1,13 @@
 @echo off
 title ExecuAI Startup
+
+:: Check if .venv exists in current directory
+if not exist ".venv" (
+    echo ❌ Error: .venv folder not found in current directory.
+    echo Please run this script from the project root directory: c:\Users\R . Swati\OneDrive\Desktop\IDT\ExecuAI
+    pause
+    exit /b
+)
 echo 🚀 Starting ExecuAI System...
 
 echo 📡 Starting Backend (FastAPI)...
