@@ -52,6 +52,13 @@ function App() {
   // Feature 2: Reminder System State
   const [reminderData, setReminderData] = useState(null);
 
+  // Feature 3: Password Reset State
+  const [showPasswordReset, setShowPasswordReset] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const [passwordResetMsg, setPasswordResetMsg] = useState('');
+  const [passwordResetErr, setPasswordResetErr] = useState('');
+
   // Sync leave apps to localStorage
   useEffect(() => {
     localStorage.setItem('execuai_leave_apps', JSON.stringify(leaveApplications));
@@ -397,6 +404,42 @@ function App() {
     setUser(null);
   };
 
+  const handlePasswordResetSubmit = async (e) => {
+    e?.preventDefault();
+    if (!newPassword.trim() || !user) return;
+    
+    setIsResettingPassword(true);
+    setPasswordResetMsg('');
+    setPasswordResetErr('');
+
+    try {
+      const res = await fetch('http://localhost:8000/api/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: user.email,
+          new_password: newPassword.trim()
+        })
+      });
+      
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.detail || 'Failed to reset password permanently');
+      }
+
+      setPasswordResetMsg('Password updated successfully and saved in database!');
+      setNewPassword('');
+      setTimeout(() => {
+        setShowPasswordReset(false);
+        setPasswordResetMsg('');
+      }, 2500);
+    } catch(err) {
+      setPasswordResetErr(err.message);
+    } finally {
+      setIsResettingPassword(false);
+    }
+  };
+
   const intentLabels = {
     employee_onboarding: { label: 'Onboarding', color: '#1edce0' },
     it_provisioning: { label: 'IT Provisioning', color: '#d7a4ff' },
@@ -499,6 +542,9 @@ function App() {
           <span className="brand-sub">Enterprise Assistant</span>
         </div>
         <div className="topbar-right">
+          <button className="btn-ghost" onClick={() => setShowPasswordReset(prev => !prev)}>
+            🔑 Reset Password
+          </button>
           <div className="avatar" title={user?.role || 'Guest'}>
             {user ? user.name.split(' ').map(n => n[0]).join('') : 'SK'}
           </div>
@@ -522,6 +568,35 @@ function App() {
           <div className="context-card">
             Logged in as <strong>{user?.role || 'Executive'}</strong> ({user?.department || 'Operations'}). Your security-level toolset has been loaded.
           </div>
+
+          {showPasswordReset && (
+            <div className="inline-feature-widget" style={{ margin: '0 0 12px 0', borderLeftColor: '#f9e79f' }}>
+              <div className="widget-header">
+                <span className="widget-icon">🔑</span>
+                <h4>Update Security Password</h4>
+                <button className="close-widget-btn" onClick={() => setShowPasswordReset(false)}>✕</button>
+              </div>
+              <p className="widget-desc">Set a new persistent account password. This immediately saves to the database for all future logins.</p>
+              <form onSubmit={handlePasswordResetSubmit}>
+                <div className="form-group" style={{ marginBottom: '10px' }}>
+                  <input
+                    type="password"
+                    placeholder="Enter new strong password..."
+                    value={newPassword}
+                    onChange={e => setNewPassword(e.target.value)}
+                    required
+                    autoFocus
+                    style={{ background: 'rgba(255,255,255,0.05)' }}
+                  />
+                </div>
+                {passwordResetErr && <div style={{ color: '#ffb4ab', fontSize: '11px', marginBottom: '8px' }}>{passwordResetErr}</div>}
+                {passwordResetMsg && <div style={{ color: '#10b981', fontSize: '11px', marginBottom: '8px', fontWeight: '500' }}>{passwordResetMsg}</div>}
+                <button type="submit" className="primary-btn" style={{ background: 'linear-gradient(135deg, #f5b041, #d68910)', fontSize: '12px', padding: '8px' }} disabled={isResettingPassword}>
+                  {isResettingPassword ? 'Saving to Database...' : 'Save New Password'}
+                </button>
+              </form>
+            </div>
+          )}
 
           <div className="spacer">
             <div className="chat-history" id="chat-history">
