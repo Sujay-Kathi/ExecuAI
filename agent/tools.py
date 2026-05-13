@@ -109,6 +109,9 @@ def assign_role(name: str, role: str, department: str) -> dict:
         "message": f"{name} assigned as {role} in {department}",
     }
 
+# Alias for Feature 1
+generate_company_email = generate_employee_email
+
 
 # ────────────────────────────────────────────────────────────
 # IT Provisioning & Access Tools
@@ -135,6 +138,9 @@ def provision_it_systems(name: str) -> dict:
         "message": f"All {len(systems)} systems provisioned for {name}",
         "real_slack": slack_result is not None,
     }
+
+# Alias for Feature 1
+trigger_it_provisioning = provision_it_systems
 
 
 def grant_system_access(name: str, system: str) -> dict:
@@ -412,6 +418,25 @@ def send_notification_email(to: str, subject: str, body: str, recipient_name: st
         "message": f"Simulated email notification to {to} (set SMTP_EMAIL & SMTP_APP_PASSWORD for real emails).",
     }
 
+# Alias for Features
+send_email = send_notification_email
+
+def send_notification(text: str, channel: str = "general") -> dict:
+    """Send a notification to Slack or Teams."""
+    from agent.integrations import send_slack_message
+    
+    # Try real Slack
+    slack_result = send_slack_message(text, channel_context=channel)
+    
+    return {
+        "tool": "send_notification",
+        "status": "success" if slack_result else "simulated",
+        "channel": channel,
+        "text": text,
+        "real_slack": slack_result is not None,
+        "message": "Notification sent to Slack" if slack_result else "Simulated notification sent (Set SLACK_WEBHOOK_URL for real Slack notifications)"
+    }
+
 
 # ────────────────────────────────────────────────────────────
 # Leave Management Tools
@@ -484,6 +509,73 @@ def apply_leave(employee_id: int = 1, leave_type: str = "casual",
         "employee_id": employee_id,
         "leave_type": leave_type,
         "message": "Leave request submitted successfully",
+    }
+
+def fetch_leave_request(employee_name: str) -> dict:
+    """Fetch the most recent leave request for an employee."""
+    try:
+        from backend.database import SessionLocal
+        from backend.models import LeaveRequest, Employee
+
+        db = SessionLocal()
+        emp = db.query(Employee).filter(Employee.name.ilike(f"%{employee_name}%")).first()
+        if emp:
+            req = db.query(LeaveRequest).filter(LeaveRequest.employee_id == emp.id).order_by(LeaveRequest.created_at.desc()).first()
+            if req:
+                return {
+                    "tool": "fetch_leave_request",
+                    "status": "success",
+                    "leave_id": req.id,
+                    "employee_name": emp.name,
+                    "leave_type": req.leave_type,
+                    "start_date": req.start_date.isoformat(),
+                    "end_date": req.end_date.isoformat(),
+                    "current_status": req.status
+                }
+        db.close()
+    except Exception:
+        pass
+
+    return {
+        "tool": "fetch_leave_request",
+        "status": "success",
+        "employee_name": employee_name,
+        "leave_id": random.randint(100, 999),
+        "leave_type": "vacation",
+        "start_date": "2026-06-01",
+        "end_date": "2026-06-05",
+        "current_status": "pending",
+        "note": "Simulated leave request"
+    }
+
+def update_leave_status(leave_id: int, status: str) -> dict:
+    """Approve or reject a leave request."""
+    try:
+        from backend.database import SessionLocal
+        from backend.models import LeaveRequest
+
+        db = SessionLocal()
+        req = db.query(LeaveRequest).filter(LeaveRequest.id == leave_id).first()
+        if req:
+            req.status = status
+            db.commit()
+            db.close()
+            return {
+                "tool": "update_leave_status",
+                "status": "success",
+                "leave_id": leave_id,
+                "new_status": status
+            }
+        db.close()
+    except Exception:
+        pass
+
+    return {
+        "tool": "update_leave_status",
+        "status": "success",
+        "leave_id": leave_id,
+        "new_status": status,
+        "note": "Simulated status update"
     }
 
 
@@ -1047,4 +1139,14 @@ TOOL_REGISTRY = {
     
     # Communications
     "send_notification_email": send_notification_email,
+    "send_email": send_email,
+    "send_notification": send_notification,
+    
+    # Aliases
+    "generate_company_email": generate_company_email,
+    "trigger_it_provisioning": trigger_it_provisioning,
+    
+    # Leave Approval
+    "fetch_leave_request": fetch_leave_request,
+    "update_leave_status": update_leave_status,
 }

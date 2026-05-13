@@ -27,6 +27,10 @@ INTENT_TRIGGERS = [
         "access request", "permission", "add to",
         "grant",  # "Grant Alice access to GitHub" — "grant" alone is specific enough
     ]),
+    ("leave_approval",      [
+        "approve leave", "reject leave", "authorize leave",
+        "deny leave", "grant leave request",
+    ]),
     ("leave_request",        [
         "leave", "day off", "time off", "vacation", "sick leave",
         "casual leave", "earned leave", "pto",

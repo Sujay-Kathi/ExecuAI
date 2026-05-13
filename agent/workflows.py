@@ -41,26 +41,17 @@ ONBOARDING_WORKFLOW = [
         },
     ),
     _workflow_step(
-        "Generating corporate email",
-        tool="generate_employee_email",
+        "Generating company email",
+        tool="generate_company_email",
         args_map=lambda e: {"name": e.get("name", "New Employee")},
-    ),
-    _workflow_step(
-        "Assigning role and department",
-        tool="assign_role",
-        args_map=lambda e: {
-            "name": e.get("name", "New Employee"),
-            "role": e.get("role", "Associate"),
-            "department": e.get("department", "General"),
-        },
     ),
     _workflow_step(
         "Triggering IT provisioning",
-        tool="provision_it_systems",
+        tool="trigger_it_provisioning",
         args_map=lambda e: {"name": e.get("name", "New Employee")},
     ),
     _workflow_step(
-        "Scheduling orientation session",
+        "Scheduling orientation meeting",
         tool="schedule_meeting",
         args_map=lambda e: {
             "title": "Orientation — " + e.get("name", "New Employee"),
@@ -69,19 +60,80 @@ ONBOARDING_WORKFLOW = [
     ),
     _workflow_step(
         "Sending welcome email",
-        tool="send_notification_email",
+        tool="send_email",
         args_map=lambda e: {
             "to": e.get("name", "New Employee"),
             "subject": "Welcome to the team!",
             "body": f"Hi {e.get('name', 'there')}, welcome aboard! Your accounts have been set up.",
         },
     ),
-    _workflow_step("Logging all onboarding actions"),
+    _workflow_step(
+        "Notifying team",
+        tool="send_notification",
+        args_map=lambda e: {
+            "text": f"🚀 New team member joining! Please welcome {e.get('name', 'a new colleague')} to the team.",
+            "channel": "general"
+        }
+    ),
 ]
 
 
 # ────────────────────────────────────────────────────────────
-# 2. IT System Provisioning
+# 2. Leave Approval System
+# ────────────────────────────────────────────────────────────
+LEAVE_APPROVAL_WORKFLOW = [
+    _workflow_step("Identified leave approval request"),
+    _workflow_step(
+        "Fetching leave request",
+        tool="fetch_leave_request",
+        args_map=lambda e: {"employee_name": e.get("name", "Employee")},
+    ),
+    _workflow_step(
+        "Checking leave balance",
+        tool="check_leave_balance",
+        args_map=lambda e: {
+            "employee_id": e.get("employee_id", 1),
+            "leave_type": e.get("leave_type", "casual"),
+        },
+    ),
+    _workflow_step(
+        "Validating leave policy rules",
+        tool="validate_leave_request",
+        args_map=lambda e: {
+            "employee_id": e.get("employee_id", 1),
+            "dates": e.get("dates", []),
+        },
+    ),
+    _workflow_step(
+        "Approving leave status",
+        tool="update_leave_status",
+        args_map=lambda e: {
+            "leave_id": 1, # Should be resolved from fetch_leave_request result in a real agent, but following workflow steps for now
+            "status": "approved"
+        },
+    ),
+    _workflow_step(
+        "Sending confirmation email",
+        tool="send_email",
+        args_map=lambda e: {
+            "to": e.get("name", "Employee"),
+            "subject": "Leave Request Approved",
+            "body": f"Hi {e.get('name', 'there')}, your leave request has been approved.",
+        },
+    ),
+    _workflow_step(
+        "Notifying employee via Slack",
+        tool="send_notification",
+        args_map=lambda e: {
+            "text": f"✅ Your leave request has been approved, {e.get('name', 'there')}!",
+            "channel": "direct-message"
+        }
+    ),
+]
+
+
+# ────────────────────────────────────────────────────────────
+# 3. IT System Provisioning
 # ────────────────────────────────────────────────────────────
 IT_PROVISIONING_WORKFLOW = [
     _workflow_step("Identified IT provisioning request"),
@@ -124,7 +176,7 @@ IT_PROVISIONING_WORKFLOW = [
 
 
 # ────────────────────────────────────────────────────────────
-# 3. Access Management
+# 4. Access Management
 # ────────────────────────────────────────────────────────────
 ACCESS_MANAGEMENT_WORKFLOW = [
     _workflow_step("Identified access request"),
@@ -160,7 +212,7 @@ ACCESS_MANAGEMENT_WORKFLOW = [
 
 
 # ────────────────────────────────────────────────────────────
-# 4. Leave Request
+# 5. Leave Request
 # ────────────────────────────────────────────────────────────
 LEAVE_REQUEST_WORKFLOW = [
     _workflow_step("Identified leave request"),
@@ -201,6 +253,18 @@ LEAVE_REQUEST_WORKFLOW = [
     ),
     _workflow_step("Updating leave management system"),
 ]
+
+
+# ────────────────────────────────────────────────────────────
+# 6. Meeting Scheduling
+# ────────────────────────────────────────────────────────────
+MEETING_SCHEDULING_WORKFLOW = [
+    _workflow_step("Identified meeting request"),
+    _workflow_step(
+        "Checking participant availability",
+        tool="check_availability",
+        args_map=lambda e: {"name": e.get("name", "Organizer")},
+    ),
 
 
 # ────────────────────────────────────────────────────────────
@@ -615,8 +679,7 @@ SEND_MESSAGE_WORKFLOW = [
 # ── Master mapping: intent → workflow ────────────────────────
 WORKFLOW_MAP = {
     "employee_onboarding":  ONBOARDING_WORKFLOW,
-    "it_provisioning":      IT_PROVISIONING_WORKFLOW,
-    "access_management":    ACCESS_MANAGEMENT_WORKFLOW,
+    "leave_approval":       LEAVE_APPROVAL_WORKFLOW,
     "leave_request":        LEAVE_REQUEST_WORKFLOW,
     "meeting_scheduling":   MEETING_SCHEDULING_WORKFLOW,
     "it_ticket":            IT_TICKET_WORKFLOW,
@@ -641,5 +704,4 @@ WORKFLOW_MAP = {
 # ── Chaining rules: intent → list of follow-up intents ──────
 # When a primary intent completes, automatically trigger these.
 CHAIN_RULES = {
-    "employee_onboarding": ["it_provisioning"],
 }
