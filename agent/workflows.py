@@ -265,18 +265,6 @@ MEETING_SCHEDULING_WORKFLOW = [
         tool="check_availability",
         args_map=lambda e: {"name": e.get("name", "Organizer")},
     ),
-
-
-# ────────────────────────────────────────────────────────────
-# 5. Meeting Scheduling
-# ────────────────────────────────────────────────────────────
-MEETING_SCHEDULING_WORKFLOW = [
-    _workflow_step("Identified meeting request"),
-    _workflow_step(
-        "Checking participant availability",
-        tool="check_availability",
-        args_map=lambda e: {"name": e.get("name", "Organizer")},
-    ),
     _workflow_step(
         "Resolving scheduling conflicts",
         tool="resolve_conflicts",
