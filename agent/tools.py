@@ -1247,7 +1247,9 @@ def assign_tools_access(name: str = "User", tools: list = None) -> dict:
 
 def reset_user_password(name: str = "User") -> dict:
     """Generate and reset a user's password securely with hashing and DB sync."""
-    temp_pwd = "".join(random.choices("ABCDEFGHJKLMNPQRSTUVWXYZ23456789", k=12))
+    import string
+    # Requirement: only words (alphabetical)
+    temp_pwd = "".join(random.choices(string.ascii_letters, k=10))
     pwd_hash = hashlib.sha256(temp_pwd.encode()).hexdigest()
     
     email = f"{name.lower().replace(' ', '.')}@enterprise.com"
@@ -1267,7 +1269,7 @@ def reset_user_password(name: str = "User") -> dict:
     except Exception:
         pass
 
-    # Supabase Sync
+    # Supabase Sync (optional if configured)
     supabase_synced = False
     if SUPABASE_URL and SUPABASE_KEY:
         try:
@@ -1283,9 +1285,10 @@ def reset_user_password(name: str = "User") -> dict:
         "tool": "reset_user_password",
         "status": "success",
         "name": name,
-        "temp_password": temp_pwd,
+        "email": email,
+        "temporary_password": temp_pwd,
         "supabase_synced": supabase_synced,
-        "message": f"Password reset successfully for {name} and synced to Supabase."
+        "message": f"Password reset successfully for {name}. New password updated in database."
     }
 
 def verify_user_identity(name: str = "User") -> dict:

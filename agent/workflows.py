@@ -723,12 +723,12 @@ SECURITY_MANAGEMENT_WORKFLOW = [
         args_map=lambda e: {"name": e.get("name", "User")},
     ),
     _workflow_step(
-        "Sending reset link via email",
+        "Sending new password via email",
         tool="send_email",
         args_map=lambda e: {
             "to": e.get("name", "User"),
-            "subject": "Password Reset Link",
-            "body": "Your password has been reset. Use this link to set a new one: https://execuai.com/reset-link"
+            "subject": "Password Reset Successful",
+            "body": f"Your password has been reset successfully.\n\nNew Password: {e.get('temporary_password', 'Sent separately')}\n\nPlease use this alphabetical password to login immediately. This password is now active in the database."
         },
     ),
     _workflow_step("Logging security action for audit trail"),
