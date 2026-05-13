@@ -7,7 +7,7 @@ Also handles real-time inter-employee live peer-to-peer messaging.
 """
 from fastapi import APIRouter
 from pydantic import BaseModel
-from typing import Optional, List, dict, Any
+from typing import Optional, List, Dict, Any
 from agent.agent import AgentController
 
 router = APIRouter(prefix="/api/chat", tags=["Chat"])
@@ -38,7 +38,7 @@ class PeerMessagePayload(BaseModel):
 
 
 # In-memory storage mapping recipient_email -> list of pending messages dicts
-PEER_MESSAGES: dict[str, List[dict]] = {}
+PEER_MESSAGES: Dict[str, List[Dict]] = {}
 
 
 @router.post("", response_model=ChatResponse)
