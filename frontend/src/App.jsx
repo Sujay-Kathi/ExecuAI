@@ -197,6 +197,20 @@ function App() {
         entities: data.entities,
       }]);
 
+      // Handle automatic logout/redirect after password reset
+      if (data.intent === 'password_reset') {
+        const resetName = data.entities?.name || "";
+        if (user && (resetName.toLowerCase().includes(user.name.toLowerCase()) || user.name.toLowerCase().includes(resetName.toLowerCase()))) {
+          setMessages(prev => [...prev, {
+            role: 'ai',
+            text: '⚠️ **System Requirement:** Your password has been changed. You will be redirected to the login portal in 5 seconds to authenticate with your new credentials.'
+          }]);
+          setTimeout(() => {
+            handleLogout();
+          }, 5000);
+        }
+      }
+
     } catch (err) {
       setIsLoading(false);
       setExecutionSteps(['❌ Connection failed']);
