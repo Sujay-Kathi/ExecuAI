@@ -1442,7 +1442,21 @@ def update_candidate_status(candidate_id: int, status: str) -> dict:
         if candidate:
             candidate.status = status
             db.commit()
-        db.close()# ── Master IT/Admin Tools (Strict Spec) ──────────────────────────
+        db.close()
+        return {
+            "tool": "update_candidate_status",
+            "status": "success",
+            "candidate_id": candidate_id,
+            "new_status": status
+        }
+    except Exception as e:
+        return {
+            "tool": "update_candidate_status",
+            "status": "error",
+            "message": str(e)
+        }
+
+# ── Master IT/Admin Tools (Strict Spec) ──────────────────────────
 
 def fetch_employee_data(name: str = None) -> dict:
     """Fetch employee details from DB."""
