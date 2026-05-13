@@ -164,6 +164,11 @@ class AgentController:
                 try:
                     args = args_map(entities)
                     result = self.tools[tool_name](**args)
+                    
+                    # Update entities with result so subsequent steps can use them (e.g., password)
+                    if isinstance(result, dict) and result.get("status") == "success":
+                        entities.update(result)
+
                     executed.append({
                         "step": i + 1,
                         "action": action,

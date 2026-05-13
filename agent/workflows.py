@@ -64,7 +64,14 @@ ONBOARDING_WORKFLOW = [
         args_map=lambda e: {
             "to": e.get("name", "New Employee"),
             "subject": "Welcome to the team!",
-            "body": f"Hi {e.get('name', 'there')}, welcome aboard! Your accounts have been set up as {e.get('role', 'an associate')}.",
+            "body": (
+                f"Hi {e.get('name', 'there')}, welcome aboard!\n\n"
+                f"Your accounts have been set up as {e.get('role', 'an associate')}.\n"
+                f"You can now access the portal at: http://localhost:3000\n"
+                f"Your login email: {e.get('email', 'N/A')}\n"
+                f"Your temporary password: {e.get('password', 'N/A')}\n\n"
+                "Please change your password after your first login."
+            ),
         },
         condition=lambda e: "role" in e and e["role"] != "Associate", # Check if a specific role was mentioned (Associate is the default)
     ),

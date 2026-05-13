@@ -12,6 +12,7 @@ Tools are registered in TOOL_REGISTRY and looked up by name during execution.
 import os
 import uuid
 import random
+import hashlib
 from datetime import datetime, timezone, timedelta
 from supabase import create_client, Client
 from backend.config import SUPABASE_URL, SUPABASE_KEY
@@ -32,6 +33,7 @@ def create_employee_record(name: str, role: str, department: str) -> dict:
         db = SessionLocal()
         # Check if exists
         emp = db.query(Employee).filter(Employee.email == email).first()
+        default_password = None
         if emp:
             # Update
             emp.role = role
@@ -41,7 +43,15 @@ def create_employee_record(name: str, role: str, department: str) -> dict:
             emp_id = emp.id
         else:
             # Create
-            emp = Employee(name=name, email=email, role=role, department=department)
+            default_password = f"Welcome{random.randint(1000, 9999)}!"
+            pwd_hash = hashlib.sha256(default_password.encode()).hexdigest()
+            emp = Employee(
+                name=name, 
+                email=email, 
+                role=role, 
+                department=department,
+                password_hash=pwd_hash
+            )
             db.add(emp)
             db.commit()
             db.refresh(emp)
@@ -60,7 +70,8 @@ def create_employee_record(name: str, role: str, department: str) -> dict:
                 "name": name,
                 "email": email,
                 "role": role,
-                "department": department
+                "department": department,
+                "password_hash": pwd_hash if default_password else None # Only update hash for new employees or keep current
             }, on_conflict="email").execute()
             supabase_synced = True
         except Exception as e:
@@ -74,8 +85,9 @@ def create_employee_record(name: str, role: str, department: str) -> dict:
         "email": email,
         "role": role,
         "department": department,
+        "password": default_password or "Existent (unchanged)",
         "supabase_synced": supabase_synced,
-        "message": f"Record updated for {name} ({email}) and synced to Supabase" if supabase_synced else f"Record processed for {name} ({email})",
+        "message": f"Record processed for {name} ({email}) and synced to Supabase. Password: {default_password}" if default_password else f"Record updated for {name} ({email})",
     }
 
 
