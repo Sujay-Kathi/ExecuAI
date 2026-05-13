@@ -17,9 +17,6 @@ INTENT_TRIGGERS = [
     ("system_provisioning",  [
         "setup system for", "provision system", "full setup",
     ]),
-    ("security_management",  [
-        "reset my password", "security reset", "account security",
-    ]),
     ("integration_management", [
         "connect hr", "integrate system", "sync data between", "link systems",
         "connect services",
@@ -62,11 +59,6 @@ INTENT_TRIGGERS = [
         "not working", "broken", "issue", "bug", "ticket",
         "problem with", "cannot access", "error", "crash",
         "outage", "down", "malfunction",
-    ]),
-    ("password_reset",       [
-        "reset password", "forgot password", "forgot my password",
-        "change password", "password expired", "unlock account",
-        "locked out", "forgot",
     ]),
     ("attrition_prediction", [
         "likely to leave", "attrition", "churn", "flight risk",

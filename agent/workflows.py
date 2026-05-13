@@ -342,34 +342,6 @@ IT_TICKET_WORKFLOW = [
 
 
 # ────────────────────────────────────────────────────────────
-# 7. Password Reset
-# ────────────────────────────────────────────────────────────
-PASSWORD_RESET_WORKFLOW = [
-    _workflow_step("Identified password reset request"),
-    _workflow_step(
-        "Verifying user identity",
-        tool="verify_identity",
-        args_map=lambda e: {"name": e.get("name", "User")},
-    ),
-    _workflow_step(
-        "Generating secure reset link",
-        tool="generate_reset_link",
-        args_map=lambda e: {"name": e.get("name", "User")},
-    ),
-    _workflow_step(
-        "Sending reset link via email",
-        tool="send_notification_email",
-        args_map=lambda e: {
-            "to": e.get("name", "User"),
-            "subject": "Password Reset Link",
-            "body": "Click here to reset your password: https://enterprise.com/reset/abc123",
-        },
-    ),
-    _workflow_step("Logging password reset action"),
-]
-
-
-# ────────────────────────────────────────────────────────────
 # 8. Attrition Prediction
 # ────────────────────────────────────────────────────────────
 ATTRITION_PREDICTION_WORKFLOW = [
@@ -702,37 +674,6 @@ SYSTEM_PROVISIONING_WORKFLOW = [
 ]
 
 
-# ────────────────────────────────────────────────────────────
-# 22. FEATURE 2: Password & Security Management
-# ────────────────────────────────────────────────────────────
-SECURITY_MANAGEMENT_WORKFLOW = [
-    _workflow_step("Identifying password reset request"),
-    _workflow_step(
-        "Verifying user identity",
-        tool="verify_user_identity",
-        args_map=lambda e: {"name": e.get("name", "User")},
-    ),
-    _workflow_step(
-        "Generating secure password reset",
-        tool="reset_user_password",
-        args_map=lambda e: {"name": e.get("name", "User")},
-    ),
-    _workflow_step(
-        "Updating authentication system",
-        tool="update_authentication",
-        args_map=lambda e: {"name": e.get("name", "User")},
-    ),
-    _workflow_step(
-        "Sending new password via email",
-        tool="send_email",
-        args_map=lambda e: {
-            "to": e.get("name", "User"),
-            "subject": "Password Reset Successful",
-            "body": f"Your password has been reset successfully.\n\nNew Password: {e.get('temporary_password', 'Sent separately')}\n\nPlease use this alphabetical password to login immediately. This password is now active in the database."
-        },
-    ),
-    _workflow_step("Logging security action for audit trail"),
-]
 
 
 # ────────────────────────────────────────────────────────────
@@ -955,7 +896,6 @@ WORKFLOW_MAP = {
     "leave_request":        LEAVE_REQUEST_WORKFLOW,
     "meeting_scheduling":   MEETING_SCHEDULING_WORKFLOW,
     "it_ticket":            IT_TICKET_WORKFLOW,
-    "password_reset":       PASSWORD_RESET_WORKFLOW,
     "attrition_prediction": ATTRITION_PREDICTION_WORKFLOW,
     "notification":         NOTIFICATION_WORKFLOW,
     "system_health":        SYSTEM_HEALTH_WORKFLOW,
@@ -978,7 +918,6 @@ WORKFLOW_MAP = {
 
     # Master IT/Admin Workflows
     "system_provisioning":  SYSTEM_PROVISIONING_WORKFLOW,
-    "security_management":  SECURITY_MANAGEMENT_WORKFLOW,
     "integration_management": INTEGRATION_MANAGEMENT_WORKFLOW,
 }
 
