@@ -36,6 +36,12 @@ sleep 5
 
 # 3. Start Frontend
 echo "💻 Starting Frontend (Vite) on port 5173..."
+# Check if node_modules exists in frontend directory
+if [ ! -d "frontend/node_modules" ]; then
+    echo "📦 node_modules not found in frontend. Running npm install..."
+    (cd frontend && npm install)
+fi
+
 # Navigate to frontend directory and run dev server in background
 (cd frontend && npm run dev) &
 FRONTEND_PID=$!
