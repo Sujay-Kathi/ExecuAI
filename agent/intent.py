@@ -25,6 +25,12 @@ INTENT_TRIGGERS = [
         "connect services",
     ]),
 
+    # Policy & Performance (High Priority)
+    ("policy_assistant",    [
+        "what is the policy", "policy for", "policy on", "policy document",
+        "hr policy", "company policy", "tell me about policy",
+    ]),
+
     # Other intents
     ("employee_onboarding",  [
         "onboard", "new hire", "new employee", "new joiner",
@@ -123,10 +129,6 @@ INTENT_TRIGGERS = [
     ("recruitment",         [
         "add new hire", "add candidate", "recruit", "new candidate",
         "schedule interview", "hire candidate",
-    ]),
-    ("policy_assistant",    [
-        "policy for", "what is the policy", "policy on", "policy document",
-        "hr policy", "company policy", "tell me about policy",
     ]),
     ("performance_summary", [
         "show performance", "performance summary", "how is he doing",
