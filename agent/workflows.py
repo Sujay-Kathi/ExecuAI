@@ -505,7 +505,7 @@ PERFORMANCE_INSIGHT_WORKFLOW = [
     _workflow_step(
         "Analyzing trends and growth areas",
         tool="analyze_performance_trends",
-        args_map=lambda e: {"data": {"tasks_completed": 45, "code_quality": "92%"}},
+        args_map=lambda e: {"data": e.get("fetch_performance_data", {})},
     ),
     _workflow_step("Highlighting strengths and improvement points"),
 ]

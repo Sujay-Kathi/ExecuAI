@@ -1011,13 +1011,17 @@ def suggest_leave_dates(balance: int, workload: dict) -> dict:
 
 def fetch_performance_data(employee_id: int = 1) -> dict:
     """Fetch performance metrics for an employee."""
+    import random
+    productivity = random.randint(85, 98)
+    attendance = random.randint(90, 100)
     return {
         "tool": "fetch_performance_data",
         "status": "success",
-        "kpis": {
-            "tasks_completed": 45,
-            "code_quality": "92%",
-            "collaboration_score": 4.8,
+        "metrics": {
+            "productivity": f"{productivity}%",
+            "attendance": f"{attendance}%",
+            "tasks_completed": random.randint(30, 60),
+            "collaboration_score": round(random.uniform(4.0, 5.0), 1),
         },
         "trends": "Improving",
     }
@@ -1025,10 +1029,20 @@ def fetch_performance_data(employee_id: int = 1) -> dict:
 
 def analyze_performance_trends(data: dict) -> dict:
     """Analyze performance data for strengths and improvements."""
+    # If data is from fetch_performance_data, it might have 'metrics'
+    metrics = data.get("metrics", {})
+    if not metrics:
+        metrics = data.get("kpis", {}) # Fallback
+        
+    prod = metrics.get("productivity", "90%")
+    att = metrics.get("attendance", "95%")
     return {
         "tool": "analyze_performance_trends",
         "status": "success",
-        "strengths": ["Consistent delivery", "High code quality"],
+        "productivity": prod,
+        "attendance": att,
+        "trend_summary": "Productivity is up 10% this quarter compared to last month.",
+        "strengths": ["Consistent delivery", "High code quality", f"Strong productivity at {prod}"],
         "improvements": ["More active participation in cross-team reviews"],
     }
 
