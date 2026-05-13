@@ -13,7 +13,19 @@ from typing import Optional
 # ── Intent keyword map ──────────────────────────────────────
 # Order matters: more-specific triggers should come first.
 INTENT_TRIGGERS = [
-    # Composite / specific first
+    # Master IT/Admin Features (Prioritized)
+    ("system_provisioning",  [
+        "setup system for", "provision system", "full setup",
+    ]),
+    ("security_management",  [
+        "reset my password", "security reset", "account security",
+    ]),
+    ("integration_management", [
+        "connect hr", "integrate system", "sync data between", "link systems",
+        "connect services",
+    ]),
+
+    # Other intents
     ("employee_onboarding",  [
         "onboard", "new hire", "new employee", "new joiner",
         "hiring", "bring on", "add employee",
@@ -103,17 +115,6 @@ INTENT_TRIGGERS = [
     ("retention_analysis",   [
         "deep audit", "retention analysis", "comprehensive report",
         "full insight", "deep dive on employee",
-    ]),
-    # IT/Admin Master Features (requested by user)
-    ("system_provisioning",  [
-        "setup system for", "provision system", "full setup",
-    ]),
-    ("security_management",  [
-        "reset my password", "security reset", "account security",
-    ]),
-    ("integration_management", [
-        "connect hr", "integrate system", "sync data between", "link systems",
-        "connect services",
     ]),
 ]
 

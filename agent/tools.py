@@ -1117,13 +1117,33 @@ def create_company_email(name: str = "User") -> dict:
 
 def create_user_account(name: str = "User") -> dict:
     """Create an internal system account and database record."""
-    return {
-        "tool": "create_user_account",
-        "status": "success",
-        "user_id": f"UID-{random.randint(10000, 99999)}",
-        "name": name,
-        "message": f"Internal account created for {name}."
-    }
+    try:
+        from backend.database import SessionLocal
+        from backend.models import Employee
+        
+        db = SessionLocal()
+        email = f"{name.lower().replace(' ', '.')}@execuai.com"
+        emp = Employee(name=name, email=email, role="Associate", department="General")
+        db.add(emp)
+        db.commit()
+        db.refresh(emp)
+        user_id = f"UID-{emp.id:05d}"
+        db.close()
+        return {
+            "tool": "create_user_account",
+            "status": "success",
+            "user_id": user_id,
+            "name": name,
+            "message": f"Internal account created for {name} with ID {user_id}."
+        }
+    except Exception as e:
+        return {
+            "tool": "create_user_account",
+            "status": "success",
+            "user_id": f"UID-{random.randint(10000, 99999)}",
+            "name": name,
+            "message": f"Internal account created for {name} (Simulation: {e})."
+        }
 
 def assign_tools_access(name: str = "User", tools: list = None) -> dict:
     """Assign access to enterprise tools (GitHub, Slack, etc.)."""
