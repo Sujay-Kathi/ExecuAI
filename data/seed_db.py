@@ -29,8 +29,26 @@ def seed_database():
         # 1. Create Employees
         default_hash = hashlib.sha256("admin123".encode()).hexdigest()
         employees = [
-            Employee(name="Sujay Kathi", email="sujaykathi25csds@rnsit.ac.in", role="CEO & Lead Architect", department="Executive", password_hash=default_hash),
-            Employee(name="Rahul Kumar", email="rahul@enterprise.com", role="Senior Software Engineer", department="Engineering", password_hash=default_hash),
+            Employee(
+                name="Sujay Kathi", 
+                email="sujaykathi25csds@rnsit.ac.in", 
+                role="CEO & Lead Architect", 
+                department="Executive", 
+                password_hash=default_hash,
+                slack_id="U12345",
+                github_username="sujay-kathi",
+                temp_password="CEO_TEMP_PWD"
+            ),
+            Employee(
+                name="Rahul Kumar", 
+                email="rahul@enterprise.com", 
+                role="Senior Software Engineer", 
+                department="Engineering", 
+                password_hash=default_hash,
+                slack_id="U67890",
+                github_username="rahul-kumar",
+                temp_password="RAHUL_TEMP_PWD"
+            ),
             Employee(name="Roshni", email="br.roshni0031@gmail.com", role="Product Manager", department="Product", password_hash=default_hash),
             Employee(name="John Doe", email="john.doe@enterprise.com", role="IT Administrator", department="IT Operations", password_hash=default_hash),
             Employee(name="Alice Wang", email="alice.wang@enterprise.com", role="HR Specialist", department="Human Resources", password_hash=default_hash),

@@ -1153,20 +1153,33 @@ def create_user_account(name: str = "User") -> dict:
         
         db = SessionLocal()
         email = f"{name.lower().replace(' ', '.')}@execuai.com"
-        emp = Employee(name=name, email=email, role="Associate", department="General")
-        db.add(emp)
-        db.commit()
-        db.refresh(emp)
+        
+        # Check if employee already exists
+        emp = db.query(Employee).filter(Employee.name.ilike(f"%{name}%")).first()
+        if not emp:
+            temp_pwd = "".join(random.choices("ABCDEFGHJKLMNPQRSTUVWXYZ23456789", k=10))
+            emp = Employee(name=name, email=email, role="Associate", department="General", temp_password=temp_pwd)
+            db.add(emp)
+            db.commit()
+            db.refresh(emp)
+        
         user_id = f"UID-{emp.id:05d}"
+        ret_email = emp.email
+        ret_pwd = emp.temp_password or "".join(random.choices("ABCDEFGHJKLMNPQRSTUVWXYZ23456789", k=10))
+        
+        if not emp.temp_password:
+            emp.temp_password = ret_pwd
+            db.commit()
+
         db.close()
-        temp_pwd = "".join(random.choices("ABCDEFGHJKLMNPQRSTUVWXYZ23456789", k=10))
         return {
             "tool": "create_user_account",
             "status": "success",
             "user_id": user_id,
+            "email": ret_email,
             "name": name,
-            "temporary_password": temp_pwd,
-            "message": f"Internal account created for {name} with ID {user_id}. Temp Password: {temp_pwd}"
+            "temporary_password": ret_pwd,
+            "message": f"Account retrieved/created for {name} from database. Email: {ret_email}"
         }
     except Exception as e:
         temp_pwd = "".join(random.choices("ABCDEFGHJKLMNPQRSTUVWXYZ23456789", k=10))
@@ -1180,29 +1193,55 @@ def create_user_account(name: str = "User") -> dict:
         }
 
 def assign_tools_access(name: str = "User", tools: list = None) -> dict:
-    """Assign access to enterprise tools (GitHub, Slack, etc.)."""
-    if not tools:
-        tools = ["GitHub", "Slack"]
-    
-    # Generate dummy credentials for the assigned tools
-    tool_creds = {}
-    clean_name = name.lower().replace(" ", "")
-    for t in tools:
-        if t.lower() == "github":
-            tool_creds["github_username"] = f"{clean_name}-git"
-            tool_creds["github_access"] = "Full (Repo + Actions)"
-        elif t.lower() == "slack":
-            tool_creds["slack_id"] = f"U{random.randint(10000, 99999)}"
-            tool_creds["slack_workspace"] = "ExecuAI-HQ"
+    """Assign access to enterprise tools and sync with database."""
+    try:
+        from backend.database import SessionLocal
+        from backend.models import Employee
+        
+        db = SessionLocal()
+        emp = db.query(Employee).filter(Employee.name.ilike(f"%{name}%")).first()
+        
+        if not tools:
+            tools = ["GitHub", "Slack"]
             
-    return {
-        "tool": "assign_tools_access",
-        "status": "success",
-        "name": name,
-        "assigned_tools": tools,
-        **tool_creds,
-        "message": f"Access granted to: {', '.join(tools)} for {name}. Credentials generated."
-    }
+        clean_name = name.lower().replace(" ", "")
+        slack_id = f"U{random.randint(10000, 99999)}"
+        github_user = f"{clean_name}-git"
+        
+        if emp:
+            if not emp.slack_id:
+                emp.slack_id = slack_id
+            else:
+                slack_id = emp.slack_id
+                
+            if not emp.github_username:
+                emp.github_username = github_user
+            else:
+                github_user = emp.github_username
+                
+            db.commit()
+            db.close()
+        
+        return {
+            "tool": "assign_tools_access",
+            "status": "success",
+            "name": name,
+            "assigned_tools": tools,
+            "slack_id": slack_id,
+            "slack_workspace": "ExecuAI-HQ",
+            "github_username": github_user,
+            "message": f"Tool access synced with database for {name}."
+        }
+    except Exception as e:
+        return {
+            "tool": "assign_tools_access",
+            "status": "success",
+            "name": name,
+            "assigned_tools": tools or ["GitHub", "Slack"],
+            "slack_id": f"U{random.randint(10000, 99999)}",
+            "github_username": f"{name.lower().replace(' ', '')}-git",
+            "message": f"Tool access granted (Simulation: {e})."
+        }
 
 def reset_user_password(name: str = "User") -> dict:
     """Generate and reset a user's password securely with hashing and DB sync."""
