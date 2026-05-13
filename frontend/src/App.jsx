@@ -14,11 +14,21 @@ function App() {
 
   // Authentication State
   const [user, setUser] = useState(null);
-  const [loginEmail, setLoginEmail] = useState('');
-  const [loginPassword, setLoginPassword] = useState('');
+  const [loginEmail, setLoginEmail] = useState('sujaykathi25csds@rnsit.ac.in');
+  const [loginPassword, setLoginPassword] = useState('admin123');
   const [loginError, setLoginError] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
-  const [seedAccounts, setSeedAccounts] = useState([]);
+
+  const initialAccounts = [
+    { id: 1, name: "Sujay Kathi", email: "sujaykathi25csds@rnsit.ac.in", role: "CEO & Lead Architect", department: "Executive", is_online: true },
+    { id: 2, name: "Rahul Kumar", email: "rahul@enterprise.com", role: "Senior Software Engineer", department: "Engineering", is_online: false },
+    { id: 3, name: "Roshni", email: "br.roshni0031@gmail.com", role: "Product Manager", department: "Product", is_online: false },
+    { id: 4, name: "John Doe", email: "john.doe@enterprise.com", role: "IT Administrator", department: "IT Operations", is_online: false },
+    { id: 5, name: "Alice Wang", email: "alice.wang@enterprise.com", role: "HR Specialist", department: "Human Resources", is_online: false },
+    { id: 6, name: "Bob Smith", email: "bob.smith@enterprise.com", role: "DevOps Engineer", department: "Engineering", is_online: false },
+  ];
+
+  const [seedAccounts, setSeedAccounts] = useState(initialAccounts);
   const [peerChatUser, setPeerChatUser] = useState(null);
 
   // Input typing feedback state
@@ -33,8 +43,12 @@ function App() {
     const fetchAccounts = () => {
       fetch('http://localhost:8000/api/auth/employees')
         .then(res => res.json())
-        .then(data => setSeedAccounts(data))
-        .catch(err => console.log('Failed to fetch seed accounts', err));
+        .then(data => {
+          if (Array.isArray(data) && data.length > 0) {
+            setSeedAccounts(data);
+          }
+        })
+        .catch(() => {}); // Retain pre-populated initial accounts silently on failure
     };
     fetchAccounts();
     const interval = setInterval(fetchAccounts, 3000);
