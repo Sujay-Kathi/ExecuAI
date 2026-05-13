@@ -43,7 +43,7 @@ def create_employee_record(name: str, role: str, department: str) -> dict:
             emp_id = emp.id
         else:
             # Create
-            default_password = f"Welcome{random.randint(1000, 9999)}!"
+            default_password = "admin123"
             pwd_hash = hashlib.sha256(default_password.encode()).hexdigest()
             emp = Employee(
                 name=name, 
