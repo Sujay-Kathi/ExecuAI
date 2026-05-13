@@ -878,6 +878,76 @@ RECRUITMENT_WORKFLOW = [
 ]
 
 
+# ────────────────────────────────────────────────────────────
+# 23. Policy Assistant
+# ────────────────────────────────────────────────────────────
+POLICY_ASSISTANT_WORKFLOW = [
+    _workflow_step("Identified policy query intent"),
+    _workflow_step(
+        "Fetching HR policy documents",
+        tool="fetch_policy_documents",
+    ),
+    _workflow_step(
+        "Searching relevant content",
+        tool="search_policy_content",
+        args_map=lambda e: {
+            "documents": e.get("documents", []),
+            "query": e.get("query", "leave policy")
+        },
+    ),
+    _workflow_step(
+        "Summarizing policy details",
+        tool="summarize_text",
+        args_map=lambda e: {
+            "text": str(e.get("matches", [{}])[0].get("snippet", "")) if e.get("matches") else "No relevant policy found."
+        },
+    ),
+]
+
+
+# ────────────────────────────────────────────────────────────
+# 24. Performance Summary
+# ────────────────────────────────────────────────────────────
+PERFORMANCE_SUMMARY_WORKFLOW = [
+    _workflow_step("Identified performance query"),
+    _workflow_step(
+        "Fetching employee data",
+        tool="fetch_employee_data",
+        args_map=lambda e: {"name": e.get("name", "Rahul")},
+    ),
+    _workflow_step(
+        "Retrieving performance metrics",
+        tool="fetch_performance_metrics",
+        args_map=lambda e: {"name": e.get("name", "Rahul")},
+    ),
+    _workflow_step(
+        "Analyzing performance trends",
+        tool="analyze_performance",
+        args_map=lambda e: {"metrics": e.get("metrics", {})},
+    ),
+    _workflow_step(
+        "Generating performance report",
+        tool="generate_report",
+        args_map=lambda e: {
+            "metrics": e.get("metrics", {}),
+            "performance": {
+                "strengths": e.get("strengths", []),
+                "improvements": e.get("improvement_areas", []),
+                "score": e.get("overall_score", 0)
+            }
+        },
+    ),
+    _workflow_step(
+        "Notifying management",
+        tool="send_notification",
+        args_map=lambda e: {
+            "text": f"Performance summary generated for {e.get('name', 'Rahul')}. Overall score: {e.get('overall_score', 0):.1f}%",
+            "channel": "hr-reviews"
+        },
+    ),
+]
+
+
 # ── Master mapping: intent → workflow ────────────────────────
 WORKFLOW_MAP = {
     "employee_onboarding":  ONBOARDING_WORKFLOW,
@@ -891,6 +961,8 @@ WORKFLOW_MAP = {
     "system_health":        SYSTEM_HEALTH_WORKFLOW,
     "workforce_insights":   WORKFORCE_INSIGHTS_WORKFLOW,
     "recruitment":          RECRUITMENT_WORKFLOW,
+    "policy_assistant":     POLICY_ASSISTANT_WORKFLOW,
+    "performance_summary":  PERFORMANCE_SUMMARY_WORKFLOW,
 
     # New Features
     "task_management":      TASK_MANAGEMENT_WORKFLOW,

@@ -124,6 +124,14 @@ INTENT_TRIGGERS = [
         "add new hire", "add candidate", "recruit", "new candidate",
         "schedule interview", "hire candidate",
     ]),
+    ("policy_assistant",    [
+        "policy for", "what is the policy", "policy on", "policy document",
+        "hr policy", "company policy", "tell me about policy",
+    ]),
+    ("performance_summary", [
+        "show performance", "performance summary", "how is he doing",
+        "review for", "kpi summary", "productivity check",
+    ]),
 ]
 
 
@@ -198,6 +206,19 @@ def extract_entities(text: str, intent: str) -> dict:
     message = _extract_message(text, intent)
     if message:
         entities["message"] = message
+
+    # 13. Policy Query
+    if intent == "policy_assistant":
+        # Extract keywords after "policy for/on" or similar
+        pattern = r"policy (?:for|on|about|regarding)\s+([\w\s]+)"
+        match = re.search(pattern, lower)
+        if match:
+            entities["query"] = match.group(1).strip()
+        else:
+            # Fallback: take anything after "what is" or just common policy keywords
+            if "leave" in lower: entities["query"] = "leave"
+            elif "remote" in lower: entities["query"] = "remote"
+            elif "conduct" in lower: entities["query"] = "conduct"
 
     return entities
 

@@ -1458,6 +1458,98 @@ def update_candidate_status(candidate_id: int, status: str) -> dict:
         "candidate_id": candidate_id,
         "new_status": status
     }
+
+# ── Feature 3: Policy Assistant ───────────────────────────────
+
+def fetch_policy_documents() -> dict:
+    """Fetch all HR policy documents from the policies directory."""
+    policy_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "policies")
+    docs = []
+    if os.path.exists(policy_dir):
+        for f in os.listdir(policy_dir):
+            if f.endswith(".md"):
+                docs.append(f)
+    return {
+        "tool": "fetch_policy_documents",
+        "status": "success",
+        "documents": docs,
+        "count": len(docs)
+    }
+
+def search_policy_content(documents: list, query: str) -> dict:
+    """Search for specific keywords within policy documents."""
+    policy_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "policies")
+    results = []
+    for doc in documents:
+        path = os.path.join(policy_dir, doc)
+        if os.path.exists(path):
+            with open(path, "r", encoding="utf-8") as f:
+                content = f.read()
+                if query.lower() in content.lower():
+                    # Extract relevant section (simple logic)
+                    start = content.lower().find(query.lower())
+                    snippet = content[max(0, start-50):min(len(content), start+200)]
+                    results.append({"document": doc, "snippet": snippet})
+    return {
+        "tool": "search_policy_content",
+        "status": "success",
+        "query": query,
+        "matches": results
+    }
+
+def summarize_text(text: str) -> dict:
+    """Summarize a large block of text into key points."""
+    # Simulation: Extracting bullet points or key sentences
+    lines = text.split("\n")
+    summary = [l.strip("- ") for l in lines if l.strip().startswith("-") or "entitled" in l.lower() or "days" in l.lower()]
+    if not summary:
+        summary = ["Refer to the full policy document for details."]
+    
+    return {
+        "tool": "summarize_text",
+        "status": "success",
+        "summary": " ".join(summary[:3])
+    }
+
+# ── Feature 4: Performance Summary ────────────────────────────
+
+def fetch_performance_metrics(name: str) -> dict:
+    """Fetch performance-related metrics for an employee."""
+    # Simulation: Return structured metrics
+    metrics = {
+        "productivity": random.randint(70, 95),
+        "attendance": random.randint(85, 100),
+        "task_completion": random.randint(75, 98),
+        "collaboration": random.randint(60, 90),
+        "deadline_compliance": random.randint(65, 92)
+    }
+    return {
+        "tool": "fetch_performance_metrics",
+        "status": "success",
+        "name": name,
+        "metrics": metrics
+    }
+
+def analyze_performance(metrics: dict) -> dict:
+    """Analyze performance metrics and generate insights."""
+    m = metrics.get("metrics", {})
+    strengths = []
+    improvements = []
+    
+    if m.get("task_completion", 0) > 85: strengths.append("Task Completion")
+    if m.get("productivity", 0) > 85: strengths.append("Productivity")
+    if m.get("attendance", 0) > 95: strengths.append("Consistency/Attendance")
+    
+    if m.get("collaboration", 0) < 75: improvements.append("Collaboration")
+    if m.get("deadline_compliance", 0) < 75: improvements.append("Meeting Deadlines")
+    
+    return {
+        "tool": "analyze_performance",
+        "status": "success",
+        "strengths": strengths or ["General performance is stable"],
+        "improvement_areas": improvements or ["Continue current growth trajectory"],
+        "overall_score": sum(m.values()) / len(m) if m else 0
+    }
 TOOL_REGISTRY = {
     # Employee Management
     "create_employee_record": create_employee_record,
@@ -1554,4 +1646,11 @@ TOOL_REGISTRY = {
     "add_candidate_record": add_candidate_record,
     "update_candidate_status": update_candidate_status,
     "schedule_interview": schedule_meeting,  # Alias
+
+    # Policy & Performance (New)
+    "fetch_policy_documents": fetch_policy_documents,
+    "search_policy_content": search_policy_content,
+    "summarize_text": summarize_text,
+    "fetch_performance_metrics": fetch_performance_metrics,
+    "analyze_performance": analyze_performance,
 }
