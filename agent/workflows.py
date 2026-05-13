@@ -951,6 +951,69 @@ PERFORMANCE_SUMMARY_WORKFLOW = [
 ]
 
 
+# ────────────────────────────────────────────────────────────
+# 25. Attrition Risk Detection (ML)
+# ────────────────────────────────────────────────────────────
+ATTRITION_RISK_DETECTION_WORKFLOW = [
+    _workflow_step("Identified prediction request"),
+    _workflow_step(
+        "Fetching all employee records",
+        tool="fetch_all_employees",
+    ),
+    _workflow_step(
+        "Loading attrition prediction model",
+        tool="load_ml_model",
+        args_map=lambda e: {"model_name": "attrition_model.pkl"},
+    ),
+    _workflow_step(
+        "Predicting attrition risk per employee",
+        tool="predict_attrition",
+        args_map=lambda e: {
+            "model": e.get("model", {}),
+            "employee_features": e.get("employees", [{}])[0] # Simplified for one or iterative
+        },
+    ),
+    _workflow_step(
+        "Generating risk insights",
+        tool="generate_report",
+        args_map=lambda e: {
+            "type": "attrition_risk",
+            "data": e.get("employees", [])
+        },
+    ),
+]
+
+
+# ────────────────────────────────────────────────────────────
+# 26. Bulk Notifications
+# ────────────────────────────────────────────────────────────
+BULK_NOTIFICATION_WORKFLOW = [
+    _workflow_step("Identified notification request"),
+    _workflow_step(
+        "Fetching recipient group",
+        tool="fetch_employee_group",
+        args_map=lambda e: {"group_type": e.get("group", "all")},
+    ),
+    _workflow_step(
+        "Sending email notifications",
+        tool="send_email",
+        args_map=lambda e: {
+            "to": "multiple@recipients.com",
+            "subject": "Important Company Update",
+            "body": e.get("message", "This is an automated notification."),
+        },
+    ),
+    _workflow_step(
+        "Sending chatbot notifications",
+        tool="send_notification",
+        args_map=lambda e: {
+            "text": e.get("message", "New notification arrived."),
+            "channel": "general"
+        },
+    ),
+]
+
+
 # ── Master mapping: intent → workflow ────────────────────────
 WORKFLOW_MAP = {
     "employee_onboarding":  ONBOARDING_WORKFLOW,
@@ -965,6 +1028,8 @@ WORKFLOW_MAP = {
     "recruitment":          RECRUITMENT_WORKFLOW,
     "policy_assistant":     POLICY_ASSISTANT_WORKFLOW,
     "performance_summary":  PERFORMANCE_SUMMARY_WORKFLOW,
+    "attrition_risk":       ATTRITION_RISK_DETECTION_WORKFLOW,
+    "bulk_notify":          BULK_NOTIFICATION_WORKFLOW,
 
     # New Features
     "task_management":      TASK_MANAGEMENT_WORKFLOW,

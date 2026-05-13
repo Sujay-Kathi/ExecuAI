@@ -24,6 +24,9 @@ class Employee(Base):
     temp_password = Column(String(50), nullable=True)
     slack_id = Column(String(50), nullable=True)
     github_username = Column(String(100), nullable=True)
+    salary = Column(Integer, default=50000)
+    satisfaction_level = Column(Integer, default=3) # 1-5
+    workload_score = Column(Integer, default=70) # 0-100
     date_joined = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     leave_requests = relationship("LeaveRequest", back_populates="employee")

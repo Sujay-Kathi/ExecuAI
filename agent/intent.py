@@ -24,9 +24,8 @@ INTENT_TRIGGERS = [
 
     # Policy & Performance (High Priority)
     ("policy_assistant",    [
-        "what is leave policy", "leave policy", "policy for", "policy on", 
-        "what is the policy", "policy document", "hr policy", "company policy",
-        "tell me about policy",
+        "what is the policy", "policy for", "policy on", "policy document",
+        "hr policy", "company policy", "tell me about policy",
     ]),
 
     # Other intents
@@ -121,6 +120,14 @@ INTENT_TRIGGERS = [
     ("performance_summary", [
         "show performance", "performance summary", "how is he doing",
         "review for", "kpi summary", "productivity check",
+    ]),
+    ("attrition_risk", [
+        "who might leave", "attrition risk", "predict attrition",
+        "turnover prediction", "employee risk",
+    ]),
+    ("bulk_notify", [
+        "notify all employees", "send bulk message", "broadcast update",
+        "notify group", "send alert to all",
     ]),
 ]
 
