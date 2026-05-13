@@ -306,6 +306,7 @@ class AgentController:
                 f"HR has been notified and the request is pending approval. "
                 f"({success_count}/{total_count} steps completed)"
             ),
+            "list_pending_leaves": self._build_pending_leaves_summary(execution),
             "meeting_scheduling": (
                 f"'{title}' has been scheduled successfully. "
                 f"Calendar invites have been sent to all participants.{meet_link} "
@@ -345,6 +346,18 @@ class AgentController:
         return summaries.get(intent, (
             "I've processed your request and completed the necessary actions. Is there anything else you need help with?"
         ))
+
+    def _build_pending_leaves_summary(self, execution: list) -> str:
+        """Build summary for pending leave check."""
+        for ex in execution:
+            if ex.get("tool") == "fetch_pending_leave_requests" and isinstance(ex.get("detail"), dict):
+                reqs = ex["detail"].get("pending_requests", [])
+                if reqs:
+                    lines = ["📋 **Pending Leave Applications for HR Review:**\n"]
+                    for r in reqs:
+                        lines.append(f"• **{r['employee_name']}** applied for **{r['leave_type'].upper()}** leave. Reason: \"{r['reason']}\"")
+                    return "\n".join(lines)
+        return "No pending leave applications found in the database queues."
 
     def _build_attrition_summary(self, execution: list, name: str) -> str:
         """Build attrition prediction result summary."""

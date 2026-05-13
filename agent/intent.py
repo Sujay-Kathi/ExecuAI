@@ -38,6 +38,11 @@ INTENT_TRIGGERS = [
         "setup system", "provision", "system setup", "it setup",
         "configure workstation", "setup laptop", "setup account",
     ]),
+    ("list_pending_leaves", [
+        "is there any leave application", "pending leaves", "who applied for leave",
+        "show leave requests", "check leave applications", "list leave requests",
+        "pending leave applications", "any leave requests", "leave application"
+    ]),
     ("leave_approval",      [
         "approve leave", "reject leave", "authorize leave",
         "deny leave", "grant leave request",

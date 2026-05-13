@@ -609,6 +609,39 @@ def fetch_leave_request(employee_name: str) -> dict:
         "note": "Simulated leave request"
     }
 
+def fetch_pending_leave_requests() -> dict:
+    """Fetch all pending leave applications for HR review."""
+    try:
+        from backend.database import SessionLocal
+        from backend.models import LeaveRequest, Employee
+        
+        db = SessionLocal()
+        leaves = db.query(LeaveRequest).filter(LeaveRequest.status == "pending").all()
+        results = []
+        for l in leaves:
+            emp = db.query(Employee).filter(Employee.id == l.employee_id).first()
+            results.append({
+                "leave_id": l.id,
+                "employee_name": emp.name if emp else f"User #{l.employee_id}",
+                "leave_type": l.leave_type,
+                "reason": l.reason,
+                "applied_on": str(l.created_at)
+            })
+        db.close()
+        return {
+            "tool": "fetch_pending_leave_requests",
+            "status": "success",
+            "count": len(results),
+            "pending_requests": results
+        }
+    except Exception as e:
+        return {
+            "tool": "fetch_pending_leave_requests",
+            "status": "error",
+            "message": str(e)
+        }
+
+
 def update_leave_status(leave_id: int, status: str) -> dict:
     """Approve or reject a leave request."""
     try:
@@ -1704,6 +1737,7 @@ TOOL_REGISTRY = {
     "send_notification_email": send_notification_email,
 
     # Leave
+    "fetch_pending_leave_requests": fetch_pending_leave_requests,
     "check_leave_balance": check_leave_balance,
     "validate_leave_request": validate_leave_request,
     "apply_leave": apply_leave,

@@ -951,9 +951,26 @@ PERFORMANCE_SUMMARY_WORKFLOW = [
 ]
 
 
+LIST_PENDING_LEAVES_WORKFLOW = [
+    _workflow_step("Identified pending leave check intent"),
+    _workflow_step(
+        "Fetching queued leave applications from database",
+        tool="fetch_pending_leave_requests",
+    ),
+    _workflow_step(
+        "Compiling summary report for HR Dashboard",
+        tool="summarize_text",
+        args_map=lambda e: {
+            "text": f"Found {e.get('count', 0)} pending leave applications requiring HR review and authorization." if e.get('count', 0) > 0 else "No pending leave applications found in the database queues."
+        }
+    )
+]
+
+
 # ── Master mapping: intent → workflow ────────────────────────
 WORKFLOW_MAP = {
     "employee_onboarding":  ONBOARDING_WORKFLOW,
+    "list_pending_leaves":  LIST_PENDING_LEAVES_WORKFLOW,
     "leave_approval":       LEAVE_APPROVAL_WORKFLOW,
     "leave_request":        LEAVE_REQUEST_WORKFLOW,
     "meeting_scheduling":   MEETING_SCHEDULING_WORKFLOW,
