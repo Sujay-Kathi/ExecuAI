@@ -14,6 +14,10 @@ DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./data/enterprise.db")
 NVIDIA_API_KEY = os.getenv("NVIDIA_API_KEY", "")
 NVIDIA_MODEL = os.getenv("NVIDIA_MODEL", "meta/llama-3.1-70b-instruct")
 
+# --- Supabase ---
+SUPABASE_URL = os.getenv("NEXT_PUBLIC_SUPABASE_URL", "")
+SUPABASE_KEY = os.getenv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", "")
+
 # --- App ---
 APP_TITLE = "Intelligent Enterprise Assistant"
 APP_VERSION = "0.1.0"

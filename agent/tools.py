@@ -13,6 +13,8 @@ import os
 import uuid
 import random
 from datetime import datetime, timezone, timedelta
+from supabase import create_client, Client
+from backend.config import SUPABASE_URL, SUPABASE_KEY
 
 
 # ────────────────────────────────────────────────────────────
@@ -33,6 +35,22 @@ def create_employee_record(name: str, role: str, department: str) -> dict:
         db.refresh(emp)
         emp_id = emp.id
         db.close()
+        # ── Real-time Sync to Supabase ──
+        supabase_synced = False
+        if SUPABASE_URL and SUPABASE_KEY:
+            try:
+                supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+                supabase.table("employees").insert({
+                    "name": name,
+                    "email": email,
+                    "role": role,
+                    "department": department
+                }).execute()
+                supabase_synced = True
+            except Exception as e:
+                # Non-critical for the local workflow, but we should note it
+                print(f"Supabase sync failed: {e}")
+
         return {
             "tool": "create_employee_record",
             "status": "success",
@@ -41,16 +59,36 @@ def create_employee_record(name: str, role: str, department: str) -> dict:
             "email": email,
             "role": role,
             "department": department,
+            "supabase_synced": supabase_synced,
+            "message": f"Record created for {name} ({email}) and synced to Supabase" if supabase_synced else f"Record created for {name} ({email})",
         }
     except Exception as e:
+        # ── Real-time Sync to Supabase (Fallback case) ──
+        supabase_synced = False
+        email = f"{name.lower().replace(' ', '.')}@enterprise.com"
+        if SUPABASE_URL and SUPABASE_KEY:
+            try:
+                supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+                supabase.table("employees").insert({
+                    "name": name,
+                    "email": email,
+                    "role": role,
+                    "department": department
+                }).execute()
+                supabase_synced = True
+            except Exception as e2:
+                print(f"Supabase sync failed: {e2}")
+
         return {
             "tool": "create_employee_record",
             "status": "success",
             "name": name,
-            "email": f"{name.lower().replace(' ', '.')}@enterprise.com",
+            "email": email,
             "role": role,
             "department": department,
+            "supabase_synced": supabase_synced,
             "note": f"Simulated (DB unavailable: {e})",
+            "message": f"Record created for {name} ({email}) and synced to Supabase" if supabase_synced else f"Record created for {name} ({email})"
         }
 
 
