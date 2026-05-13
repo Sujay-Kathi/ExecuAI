@@ -3,7 +3,7 @@ import './App.css';
 
 function App() {
   const [messages, setMessages] = useState([
-    { role: 'ai', text: 'Hello! I am **ExecuAI** — your Enterprise AI Assistant. Try commands like:\n\n• "Onboard Rahul as Software Engineer"\n• "Schedule meeting about Sprint Planning"\n• "Give access to GitHub for Priya"\n• "Apply for sick leave"\n• "System status"\n• "Reset password for Amit"' }
+    { role: 'ai', text: 'Hello! I am **ExecuAI** — your Enterprise AI Assistant. Try asking anything or initiate direct messaging via:\n\n• "lets chat @[colleague name]"\n• Direct queries on system records' }
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -21,6 +21,10 @@ function App() {
   const [seedAccounts, setSeedAccounts] = useState([]);
   const [peerChatUser, setPeerChatUser] = useState(null);
 
+  // Input typing feedback state
+  const [isFocused, setIsFocused] = useState(false);
+  const [showTypingDots, setShowTypingDots] = useState(false);
+
   const chatEndRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -32,7 +36,7 @@ function App() {
       .catch(err => console.log('Failed to fetch seed accounts', err));
   }, []);
 
-  // Auto-scroll chat
+  // Auto-scroll chat history
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
@@ -58,6 +62,20 @@ function App() {
       text: `🔗 **Direct Channel Established:** Interfacing live one-on-one direct feed with **${peer.name}** (${peer.role}). Broadcast message below.`
     }]);
     inputRef.current?.focus();
+  };
+
+  const handleFocus = () => {
+    setIsFocused(true);
+    if (input.length === 0) {
+      setShowTypingDots(true);
+      const timer = setTimeout(() => setShowTypingDots(false), 1200);
+      return () => clearTimeout(timer);
+    }
+  };
+
+  const handleBlur = () => {
+    setIsFocused(false);
+    setShowTypingDots(false);
   };
 
   const handleSend = async () => {
@@ -142,26 +160,7 @@ function App() {
     }
   };
 
-  const quickActions = [
-    { label: '👤 Onboard', prompt: 'Onboard Rahul as Software Engineer' },
-    { label: '🔑 Reset Pwd', prompt: 'Reset password for Amit' },
-    { label: '📅 Meeting', prompt: 'Schedule meeting about Sprint Planning' },
-    { label: '🏥 Leave', prompt: 'Apply for sick leave from tomorrow' },
-    { label: '📊 Attrition', prompt: 'Who is likely to leave the company?' },
-    { label: '💚 Health', prompt: 'Check system status' },
-    { label: '📋 Tasks', prompt: 'What are my tasks for today?' },
-    { label: '📝 Summary', prompt: 'What did I do today?' },
-    { label: '📅 Plan Leave', prompt: 'Plan my leave for next month' },
-    { label: '📈 Performance', prompt: 'Show my performance insights' },
-    { label: '💡 How-To', prompt: 'How to apply for reimbursement?' },
-    { label: '⚡ Optimize', prompt: 'Optimize my schedule' },
-    { label: '💻 Software', prompt: 'I need IntelliJ IDEA software' },
-    { label: '🔔 Updates', prompt: 'What are my important updates?' },
-    { label: '🚀 Master Demo', prompt: 'Run a deep audit and retention analysis for Rahul' },
-  ];
-
   const formatMessage = (text) => {
-    // Simple markdown-lite: bold, line breaks, bullets
     return text
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
       .replace(/\n/g, '<br/>')
@@ -194,27 +193,6 @@ function App() {
     }
   };
 
-  const getFilteredActions = () => {
-    if (!user) return [];
-    const r = user.role.toLowerCase();
-    const d = user.department.toLowerCase();
-
-    // CEO / Exec / Manager: Sees everything
-    if (r.includes('ceo') || r.includes('architect') || d.includes('executive') || r.includes('manager')) {
-      return quickActions;
-    }
-    // HR Specialist / HR
-    if (r.includes('hr') || d.includes('human resources')) {
-      return quickActions.filter(a => ['👤 Onboard', '🏥 Leave', '📊 Attrition', '🚀 Master Demo'].includes(a.label));
-    }
-    // IT Administrator / IT Ops
-    if (r.includes('it') || d.includes('it operations')) {
-      return quickActions.filter(a => ['🔑 Reset Pwd', '💚 Health', '💻 Software'].includes(a.label));
-    }
-    // Regular Employee
-    return quickActions.filter(a => ['🏥 Leave', '📋 Tasks', '📝 Summary', '📅 Plan Leave', '📈 Performance', '💡 How-To', '⚡ Optimize', '💻 Software', '🔔 Updates'].includes(a.label));
-  };
-
   const intentLabels = {
     employee_onboarding: { label: 'Onboarding', color: '#1edce0' },
     it_provisioning: { label: 'IT Provisioning', color: '#d7a4ff' },
@@ -238,18 +216,17 @@ function App() {
     general: { label: 'General', color: '#8b90a0' },
   };
 
-  // If not logged in, render Login View
+  // Login Authentication shell screen
   if (!user) {
     return (
       <div className="login-wrapper">
-        <div className="glass-card login-card">
+        <div className="login-card">
           <div className="login-header">
-            <div className="logo-icon">⚡</div>
             <h2>ExecuAI Access Portal</h2>
             <p>Secure Enterprise Portal Authentication</p>
           </div>
 
-          <form className="login-form" onSubmit={handleLogin}>
+          <form onSubmit={handleLogin}>
             <div className="form-group">
               <label htmlFor="email">Work Email</label>
               <input
@@ -284,8 +261,8 @@ function App() {
           </form>
 
           {seedAccounts.length > 0 && (
-            <div className="login-footer">
-              <span>Quick Login Demo Accounts (Password: <strong>admin123</strong>)</span>
+            <div style={{ marginTop: '20px', textAlign: 'center' }}>
+              <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.26)' }}>Quick Demo Accounts (Password: <strong>admin123</strong>)</span>
               <div className="account-pills">
                 {seedAccounts.map((acc) => (
                   <div
@@ -306,89 +283,71 @@ function App() {
   }
 
   return (
-    <div className="dashboard-container">
-      {/* Top Navbar */}
-      <nav className="top-nav">
-        <div className="nav-left">
-          <div className="logo-icon">⚡</div>
-          <h1>ExecuAI <span className="subtitle">Enterprise Assistant</span></h1>
+    <div className="shell">
+      <div className="glow-orb"></div>
+      <div className="glow-orb2"></div>
+
+      <div className="topbar">
+        <div className="brand">
+          <div className="brand-icon">⚡</div>
+          <span className="brand-name">ExecuAI</span>
+          <div className="brand-sep"></div>
+          <span className="brand-sub">Enterprise Assistant</span>
         </div>
-        <div className="nav-right">
-          {currentIntent && intentLabels[currentIntent] && (
-            <div
-              className="intent-badge"
-              style={{ borderColor: intentLabels[currentIntent].color, color: intentLabels[currentIntent].color }}
-            >
-              {intentLabels[currentIntent].label}
-            </div>
-          )}
+        <div className="topbar-right">
           <div className="avatar" title={user?.role || 'Guest'}>
-            {user ? user.name.split(' ').map(n => n[0]).join('') : '🔒'}
+            {user ? user.name.split(' ').map(n => n[0]).join('') : 'SK'}
           </div>
-          {user && (
-            <button
-              className="quick-btn"
-              style={{ borderColor: 'var(--crimson)', color: 'var(--crimson)' }}
-              onClick={() => setUser(null)}
-            >
-              Sign Out
-            </button>
-          )}
+          <button className="btn-ghost" onClick={() => setUser(null)}>
+            Sign out
+          </button>
         </div>
-      </nav>
+      </div>
 
-      <main className="main-layout">
-        {/* Left: Chat Panel */}
-        <section className="glass-card chat-panel" id="chat-panel">
-          <div className="card-header">
-            <h2>AI Assistant</h2>
-            <div className={`status-indicator ${isLoading ? 'processing' : 'idle'}`}>
-              <div className="pulse-dot"></div>
-              <span>{isLoading ? 'Processing...' : 'Ready'}</span>
+      <div className="body">
+        {/* Leftmost panel: AI Chat Stream */}
+        <div className="panel">
+          <div className="panel-top">
+            <span className="panel-title">AI Assistant</span>
+            <span className="status-dot">
+              <span className="dot"></span>
+              {isLoading ? 'Processing...' : 'Ready'}
+            </span>
+          </div>
+
+          <div className="context-card">
+            Logged in as <strong>{user?.role || 'Executive'}</strong> ({user?.department || 'Operations'}). Your security-level toolset has been loaded.
+          </div>
+
+          <div className="spacer">
+            <div className="chat-history" id="chat-history">
+              {messages.map((m, i) => (
+                <div key={i} className={`chat-bubble ${m.role} ${m.isPeer ? 'peer-user' : ''}`}>
+                  {m.role === 'peer' && (
+                    <div className="peer-badge">
+                      <span className="peer-icon">💬</span> {m.peerName} <span className="peer-role-tag">({m.peerRole})</span>
+                    </div>
+                  )}
+                  {m.intent && intentLabels[m.intent] && (
+                    <span
+                      className="msg-intent-tag"
+                      style={{ borderColor: intentLabels[m.intent].color + '66', color: intentLabels[m.intent].color }}
+                    >
+                      {intentLabels[m.intent].label}
+                    </span>
+                  )}
+                  <span dangerouslySetInnerHTML={{ __html: formatMessage(m.text) }} />
+                </div>
+              ))}
+              {isLoading && (
+                <div className="chat-bubble ai typing-indicator">
+                  <span className="dot"></span>
+                  <span className="dot"></span>
+                  <span className="dot"></span>
+                </div>
+              )}
+              <div ref={chatEndRef} />
             </div>
-          </div>
-
-          <div className="chat-history" id="chat-history">
-            {messages.map((m, i) => (
-              <div key={i} className={`chat-bubble ${m.role} ${m.role === 'ai' ? 'fade-in' : ''} ${m.isPeer ? 'peer-user' : ''}`}>
-                {m.role === 'peer' && (
-                  <div className="peer-badge">
-                    <span className="peer-icon">💬</span> {m.peerName} <span className="peer-role-tag">({m.peerRole})</span>
-                  </div>
-                )}
-                {m.intent && intentLabels[m.intent] && (
-                  <span
-                    className="msg-intent-tag"
-                    style={{ background: intentLabels[m.intent].color + '22', color: intentLabels[m.intent].color }}
-                  >
-                    {intentLabels[m.intent].label}
-                  </span>
-                )}
-                <span dangerouslySetInnerHTML={{ __html: formatMessage(m.text) }} />
-              </div>
-            ))}
-            {isLoading && (
-              <div className="chat-bubble ai typing-indicator">
-                <span className="dot"></span>
-                <span className="dot"></span>
-                <span className="dot"></span>
-              </div>
-            )}
-            <div ref={chatEndRef} />
-          </div>
-
-          {/* Quick Actions */}
-          <div className="quick-actions" id="quick-actions">
-            {getFilteredActions().map((qa, i) => (
-              <button
-                key={i}
-                className="quick-btn"
-                onClick={() => { setInput(qa.prompt); inputRef.current?.focus(); }}
-                disabled={isLoading}
-              >
-                {qa.label}
-              </button>
-            ))}
           </div>
 
           {/* Interactive Chat Input Area with Live Peer Overlays */}
@@ -435,118 +394,104 @@ function App() {
               </div>
             )}
 
-            <div className={`chat-input-area ${peerChatUser ? 'peer-mode-active' : ''}`}>
+            <div className="input-wrap">
+              <div className={`typing-dots ${showTypingDots && input.length === 0 ? 'visible' : ''}`}>
+                <span></span><span></span><span></span>
+              </div>
               <input
                 ref={inputRef}
-                id="chat-input"
+                className={`input-field ${input.length > 0 ? 'typing' : ''}`}
+                id="mainInput"
                 type="text"
-                placeholder={peerChatUser ? `Direct Message @${peerChatUser.name.split(' ')[0]}...` : "E.g., lets chat @ or Onboard Rahul..."}
+                placeholder={peerChatUser ? `Direct Message @${peerChatUser.name.split(' ')[0]}...` : "Ask anything… (e.g. lets chat @)"}
+                maxLength={200}
+                autoComplete="off"
                 value={input}
-                onChange={e => setInput(e.target.value)}
+                onFocus={handleFocus}
+                onBlur={handleBlur}
+                onChange={e => {
+                  setInput(e.target.value);
+                  if (e.target.value.length > 0) setShowTypingDots(false);
+                }}
                 onKeyDown={e => e.key === 'Enter' && handleSend()}
                 disabled={isLoading}
               />
-              <button className="primary-btn" onClick={handleSend} disabled={isLoading} id="send-btn">
-                {isLoading ? '⏳' : peerChatUser ? 'Chat' : 'Send'}
+              <button
+                className={`btn-send ${input.length > 0 ? 'active' : ''}`}
+                id="sendBtn"
+                onClick={handleSend}
+                disabled={isLoading}
+                aria-label="Send"
+              >
+                ↑
               </button>
             </div>
+            <div className={`char-counter ${input.length > 0 ? 'visible' : ''}`}>
+              {input.length} / 200
+            </div>
           </div>
-        </section>
+        </div>
 
-        {/* Center: Dynamic Execution Log Panel */}
-        <section className="glass-card execution-panel" id="execution-panel">
-          <div className="card-header">
-            <h2>Execution Pipeline</h2>
-            {executionTime !== null && (
-              <span className="exec-time">{executionTime.toFixed(2)}s</span>
-            )}
-          </div>
-          <div className="timeline" id="execution-timeline">
-            {executionSteps.length === 0 ? (
-              <div className="empty-state">
-                <div className="empty-icon">🚀</div>
-                <p>Send a message to see the agent's execution pipeline</p>
+        {/* Center panel: Execution Pipeline */}
+        <div className="pipeline-panel">
+          <div className="sec-title">Execution pipeline</div>
+          {executionSteps.length === 0 ? (
+            <div className="pipeline-empty">
+              <div className="pipeline-icon-wrap">
+                🚀
               </div>
-            ) : (
-              executionSteps.map((step, i) => {
-                const isDone = i <= activeStep;
-                const isActive = i === activeStep && isLoading;
-                const statusClass = isDone ? 'done' : isActive ? 'active' : 'pending';
-                const icon = step.startsWith('✅') ? '✅' :
-                             step.startsWith('❌') ? '❌' :
-                             step.startsWith('⏭️') ? '⏭️' :
-                             step.startsWith('🔍') || step.startsWith('🧠') || step.startsWith('📋') ? step.charAt(0) + step.charAt(1) :
-                             isDone ? '✓' : '';
-                const cleanStep = step.replace(/^[✅❌⏭️🔍🧠📋]\s*/, '');
+              <p className="pipeline-hint">Send a message to see the agent's execution pipeline</p>
+            </div>
+          ) : (
+            executionSteps.map((step, i) => {
+              const isDone = i <= activeStep;
+              const isActive = i === activeStep && isLoading;
+              const statusClass = isDone ? 'done' : isActive ? 'active' : '';
+              const cleanStep = step.replace(/^[✅❌⏭️🔍🧠📋]\s*/, '');
 
-                return (
-                  <div key={i} className={`timeline-item ${statusClass}`} style={{ animationDelay: `${i * 0.08}s` }}>
-                    <div className="timeline-marker">
-                      {isActive ? <div className="active-dot"></div> :
-                       isDone ? <span className="check-mark">{icon || '✓'}</span> :
-                       <span className="step-num">{i + 1}</span>}
-                    </div>
-                    <div className="timeline-content">
-                      <h4>{cleanStep}</h4>
-                      <p>Step {i + 1} of {executionSteps.length}</p>
-                    </div>
+              return (
+                <div key={i} className={`timeline-item ${statusClass}`}>
+                  <div className="timeline-marker">
+                    {isDone ? '✓' : isActive ? '•' : i + 1}
                   </div>
-                );
-              })
-            )}
-          </div>
-        </section>
+                  <div className="timeline-content">
+                    <h4>{cleanStep}</h4>
+                    <p>Step {i + 1} of {executionSteps.length}</p>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
 
-        {/* Right: Dashboard Stats */}
-        <section className="data-panel" id="stats-panel">
-          <div className="glass-card stat-card">
-            <h3>Agent Capabilities</h3>
-            <div className="stat-value accent-teal">10</div>
-            <div className="trend positive">Workflows active</div>
+        {/* Rightmost panel: Realtime Status & Agent Metadata */}
+        <div className="sidebar">
+          <div className="stat-block">
+            <span className="stat-label">Agent capabilities</span>
+            <span className="stat-value">10</span>
+            <span className="stat-sub">Workflows active</span>
           </div>
-
-          <div className="glass-card stat-card">
-            <h3>Current Intent</h3>
-            <div className="intent-display">
-              {currentIntent ? (
-                <span
-                  className="intent-pill"
-                  style={{
-                    background: (intentLabels[currentIntent]?.color || '#8b90a0') + '22',
-                    color: intentLabels[currentIntent]?.color || '#8b90a0',
-                    borderColor: (intentLabels[currentIntent]?.color || '#8b90a0') + '44',
-                  }}
-                >
-                  {intentLabels[currentIntent]?.label || currentIntent}
-                </span>
-              ) : (
-                <span className="intent-pill idle-pill">Awaiting input</span>
-              )}
+          <div className="divider"></div>
+          <div className="stat-block">
+            <span className="stat-label">Current intent</span>
+            <div className="intent-pill">
+              {currentIntent ? (intentLabels[currentIntent]?.label || currentIntent) : 'Awaiting input'}
             </div>
           </div>
-
-          <div className="glass-card stat-card">
-            <h3>Steps Executed</h3>
-            <div className="stat-value">{executionSteps.filter((_, i) => i <= activeStep).length}</div>
-            <div className="progress-bar">
-              <div
-                className="progress-fill info-fill"
-                style={{ width: executionSteps.length ? `${((activeStep + 1) / executionSteps.length) * 100}%` : '0%' }}
-              ></div>
-            </div>
+          <div className="divider"></div>
+          <div className="stat-block">
+            <span className="stat-label">Steps executed</span>
+            <span className="stat-value">{executionSteps.filter((_, i) => i <= activeStep).length}</span>
           </div>
-
-          <div className="glass-card stat-card">
-            <h3>Execution Time</h3>
-            <div className="stat-value accent-purple">
+          <div className="divider"></div>
+          <div className="stat-block">
+            <span className="stat-label">Execution time</span>
+            <span className="stat-value" style={{ fontSize: '16px', color: executionTime !== null ? '#c8b4ff' : 'rgba(255,255,255,0.16)' }}>
               {executionTime !== null ? `${executionTime.toFixed(2)}s` : '—'}
-            </div>
-            <div className="trend positive">
-              {executionTime !== null && executionTime < 1 ? '⚡ Blazing fast' : executionTime !== null ? '✓ Completed' : 'Waiting...'}
-            </div>
+            </span>
           </div>
-        </section>
-      </main>
+        </div>
+      </div>
     </div>
   );
 }
