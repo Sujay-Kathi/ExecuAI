@@ -13,6 +13,10 @@ You will NOT need to run this again unless the token expires.
 """
 import os
 import sys
+import supabase
+import google.auth.transport.requests
+import google.oauth2.credentials
+import google_auth_oauthlib.flow
 
 # Add project root to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
