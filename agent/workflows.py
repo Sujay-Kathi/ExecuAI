@@ -700,7 +700,14 @@ SYSTEM_PROVISIONING_WORKFLOW = [
     _workflow_step(
         "Send notification in chatbot",
         tool="send_notification",
-        args_map=lambda e: {"to": e.get("name", "User"), "message": "Your system setup is complete."},
+        args_map=lambda e: {
+            "to": e.get("name", "User"), 
+            "message": (
+                f"System setup complete for {e.get('name', 'User')}. "
+                f"Credentials: {e.get('employee', {}).get('email', 'Pending')} / {e.get('generate_random_password', {}).get('result', 'Welcome@123')}. "
+                f"GitHub and Slack have been provisioned via SSO."
+            )
+        },
     ),
 ]
 
@@ -754,7 +761,13 @@ INTEGRATION_MANAGEMENT_WORKFLOW = [
     _workflow_step(
         "Notify via chatbot",
         tool="send_notification",
-        args_map=lambda e: {"to": e.get("name") if e.get("name") and e.get("name") != "User" else "Sujay Kathi", "message": "Integration and sync complete. Your schedule has been sent to your email."},
+        args_map=lambda e: {
+            "to": e.get("name") if e.get("name") and e.get("name") != "User" else "Sujay Kathi", 
+            "message": (
+                f"HR system connected with email and calendar for {e.get('name', 'User')}. "
+                f"Upcoming dates:\n{e.get('fetch_employee_schedule', {}).get('schedule', 'None found.')}"
+            )
+        },
     ),
 ]
 SEND_MESSAGE_WORKFLOW = [
