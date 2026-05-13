@@ -19,6 +19,7 @@ function App() {
   const [loginError, setLoginError] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [seedAccounts, setSeedAccounts] = useState([]);
+  const [peerChatUser, setPeerChatUser] = useState(null);
 
   const chatEndRef = useRef(null);
   const inputRef = useRef(null);
@@ -46,10 +47,50 @@ function App() {
     }
   }, [isLoading, activeStep, executionSteps]);
 
+  const availablePeers = seedAccounts.filter(acc => acc.email !== user?.email);
+  const showPeerMenu = input.toLowerCase().includes('lets chat') && input.includes('@') && !peerChatUser;
+
+  const selectPeerUser = (peer) => {
+    setPeerChatUser(peer);
+    setInput('');
+    setMessages(prev => [...prev, {
+      role: 'ai',
+      text: `🔗 **Direct Channel Established:** Interfacing live one-on-one direct feed with **${peer.name}** (${peer.role}). Broadcast message below.`
+    }]);
+    inputRef.current?.focus();
+  };
+
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
 
     const userMessage = input.trim();
+
+    // If live peer-to-peer chat mode is active
+    if (peerChatUser) {
+      setMessages(prev => [...prev, { role: 'user', text: userMessage, isPeer: true }]);
+      setInput('');
+      setIsLoading(true);
+
+      // Simulate human-like peer colleague review & response
+      setTimeout(() => {
+        setIsLoading(false);
+        const replies = [
+          `Hey! Got your message. Let's sync up on this today and finalize the details.`,
+          `Absolutely, I have those records active on my terminal. I will forward them to you shortly!`,
+          `Understood. Let me verify the credentials on my end and get back to you in a few minutes.`,
+          `Thanks for reaching out directly. Let's schedule a quick 5-min huddle to close this loop.`
+        ];
+        const randomReply = replies[Math.floor(Math.random() * replies.length)];
+        setMessages(prev => [...prev, {
+          role: 'peer',
+          peerName: peerChatUser.name,
+          peerRole: peerChatUser.role,
+          text: randomReply
+        }]);
+      }, 1500);
+      return;
+    }
+
     setMessages(prev => [...prev, { role: 'user', text: userMessage }]);
     setInput('');
     setIsLoading(true);
@@ -309,7 +350,12 @@ function App() {
 
           <div className="chat-history" id="chat-history">
             {messages.map((m, i) => (
-              <div key={i} className={`chat-bubble ${m.role} ${m.role === 'ai' ? 'fade-in' : ''}`}>
+              <div key={i} className={`chat-bubble ${m.role} ${m.role === 'ai' ? 'fade-in' : ''} ${m.isPeer ? 'peer-user' : ''}`}>
+                {m.role === 'peer' && (
+                  <div className="peer-badge">
+                    <span className="peer-icon">💬</span> {m.peerName} <span className="peer-role-tag">({m.peerRole})</span>
+                  </div>
+                )}
                 {m.intent && intentLabels[m.intent] && (
                   <span
                     className="msg-intent-tag"
@@ -345,20 +391,65 @@ function App() {
             ))}
           </div>
 
-          <div className="chat-input-area">
-            <input
-              ref={inputRef}
-              id="chat-input"
-              type="text"
-              placeholder="E.g., Onboard Rahul as Software Engineer..."
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleSend()}
-              disabled={isLoading}
-            />
-            <button className="primary-btn" onClick={handleSend} disabled={isLoading} id="send-btn">
-              {isLoading ? '⏳' : 'Send'}
-            </button>
+          {/* Interactive Chat Input Area with Live Peer Overlays */}
+          <div className="chat-input-wrapper">
+            {/* Peer Auto-Complete Dropdown Menu */}
+            {showPeerMenu && availablePeers.length > 0 && (
+              <div className="peer-menu-overlay">
+                <div className="peer-menu-header">Select Colleague to Live Chat:</div>
+                <div className="peer-menu-list">
+                  {availablePeers.map(peer => (
+                    <div
+                      key={peer.id}
+                      className="peer-menu-item"
+                      onClick={() => selectPeerUser(peer)}
+                    >
+                      <div className="peer-item-avatar">{peer.name[0]}</div>
+                      <div className="peer-item-info">
+                        <div className="peer-item-name">{peer.name}</div>
+                        <div className="peer-item-role">{peer.role} • {peer.department}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Typing Area Indicator for Peer Chat */}
+            {peerChatUser && (
+              <div className="active-peer-status">
+                <div className="peer-status-left">
+                  <span className="live-dot"></span>
+                  <span>Live Channel: <strong>@{peerChatUser.name.split(' ')[0]}</strong></span>
+                </div>
+                <button
+                  className="exit-peer-btn"
+                  onClick={() => {
+                    setPeerChatUser(null);
+                    setMessages(prev => [...prev, { role: 'ai', text: 'Switched back to **ExecuAI Enterprise Assistant** mode.' }]);
+                  }}
+                  title="Switch back to AI Assistant"
+                >
+                  Exit Chat ✕
+                </button>
+              </div>
+            )}
+
+            <div className={`chat-input-area ${peerChatUser ? 'peer-mode-active' : ''}`}>
+              <input
+                ref={inputRef}
+                id="chat-input"
+                type="text"
+                placeholder={peerChatUser ? `Direct Message @${peerChatUser.name.split(' ')[0]}...` : "E.g., lets chat @ or Onboard Rahul..."}
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleSend()}
+                disabled={isLoading}
+              />
+              <button className="primary-btn" onClick={handleSend} disabled={isLoading} id="send-btn">
+                {isLoading ? '⏳' : peerChatUser ? 'Chat' : 'Send'}
+              </button>
+            </div>
           </div>
         </section>
 

@@ -769,3 +769,181 @@ body {
   color: white;
 }
 
+/* ── Live Peer Chat Mode Overlays & Bulged Badges ───── */
+
+.chat-input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.peer-menu-overlay {
+  position: absolute;
+  bottom: calc(100% + 16px);
+  left: 0;
+  right: 0;
+  background: rgba(11, 14, 20, 0.95);
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+  border: 1px solid var(--primary);
+  border-radius: 16px;
+  box-shadow: 0 12px 40px rgba(0, 229, 255, 0.25);
+  padding: 16px;
+  z-index: 100;
+  animation: fadeSlideIn 0.3s ease;
+}
+
+.peer-menu-header {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--primary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 12px;
+}
+
+.peer-menu-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.peer-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.peer-menu-item:hover {
+  background: rgba(0, 229, 255, 0.12);
+  border-color: var(--primary);
+  transform: translateX(4px);
+}
+
+.peer-item-avatar {
+  background: linear-gradient(135deg, var(--primary), var(--purple));
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 13px;
+  color: #030508;
+}
+
+.peer-item-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.peer-item-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+}
+
+.peer-item-role {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.active-peer-status {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(90deg, rgba(0, 229, 255, 0.15), rgba(215, 164, 255, 0.1));
+  border: 1px solid var(--primary);
+  border-radius: 12px;
+  padding: 10px 16px;
+  margin-bottom: 12px;
+  animation: fadeIn 0.3s ease;
+}
+
+.peer-status-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.live-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--primary);
+  box-shadow: 0 0 10px var(--primary);
+  animation: pulse 1.2s infinite;
+}
+
+.exit-peer-btn {
+  background: rgba(255, 180, 171, 0.15);
+  border: 1px solid rgba(255, 180, 171, 0.4);
+  color: var(--crimson);
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.exit-peer-btn:hover {
+  background: var(--crimson);
+  color: #030508;
+}
+
+.peer-mode-active input {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 16px rgba(0, 229, 255, 0.2) !important;
+}
+
+/* Bulged Up Badge Peer Chat Bubbles */
+.chat-bubble.peer {
+  background: linear-gradient(135deg, rgba(0, 229, 255, 0.15), rgba(13, 18, 28, 0.9));
+  border: 2px solid var(--primary);
+  box-shadow: 0 8px 24px rgba(0, 229, 255, 0.2), inset 0 2px 4px rgba(255, 255, 255, 0.2);
+  align-self: flex-start;
+  color: white;
+  transform: scale(1.02);
+  transform-origin: top left;
+  border-radius: 4px 16px 16px 16px;
+  margin-top: 8px;
+}
+
+.chat-bubble.peer-user {
+  background: linear-gradient(135deg, rgba(215, 164, 255, 0.15), rgba(13, 18, 28, 0.9));
+  border: 1px solid var(--purple);
+  box-shadow: 0 4px 16px rgba(215, 164, 255, 0.15);
+}
+
+.peer-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--primary);
+  color: #030508;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+  box-shadow: 0 4px 10px rgba(0, 229, 255, 0.4);
+  transform: translateY(-4px);
+}
+
+.peer-role-tag {
+  opacity: 0.8;
+  font-weight: 600;
+}
+
