@@ -27,8 +27,9 @@ INTENT_TRIGGERS = [
 
     # Policy & Performance (High Priority)
     ("policy_assistant",    [
-        "what is the policy", "policy for", "policy on", "policy document",
-        "hr policy", "company policy", "tell me about policy",
+        "what is leave policy", "leave policy", "policy for", "policy on", 
+        "what is the policy", "policy document", "hr policy", "company policy",
+        "tell me about policy",
     ]),
 
     # Other intents
