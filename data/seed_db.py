@@ -36,6 +36,9 @@ def seed_database():
                 role="CEO & Lead Architect", 
                 department="Executive", 
                 password_hash=default_hash,
+                salary=150000,
+                satisfaction_level=5,
+                workload_score=40,
                 slack_id="U12345",
                 github_username="sujay-kathi",
                 temp_password="CEO_TEMP_PWD"
@@ -46,14 +49,17 @@ def seed_database():
                 role="Senior Software Engineer", 
                 department="Engineering", 
                 password_hash=default_hash,
+                salary=85000,
+                satisfaction_level=4,
+                workload_score=60,
                 slack_id="U67890",
                 github_username="rahul-kumar",
                 temp_password="RAHUL_TEMP_PWD"
             ),
-            Employee(name="Roshni", email="br.roshni0031@gmail.com", role="Product Manager", department="Product", password_hash=default_hash),
-            Employee(name="John Doe", email="john.doe@enterprise.com", role="IT Administrator", department="IT Operations", password_hash=default_hash),
-            Employee(name="Alice Wang", email="alice.wang@enterprise.com", role="HR Specialist", department="Human Resources", password_hash=default_hash),
-            Employee(name="Bob Smith", email="bob.smith@enterprise.com", role="DevOps Engineer", department="Engineering", password_hash=default_hash),
+            Employee(name="Roshni", email="br.roshni0031@gmail.com", role="Product Manager", department="Product", password_hash=default_hash, salary=90000, satisfaction_level=3, workload_score=85),
+            Employee(name="John Doe", email="john.doe@enterprise.com", role="IT Administrator", department="IT Operations", password_hash=default_hash, salary=75000, satisfaction_level=2, workload_score=90),
+            Employee(name="Alice Wang", email="alice.wang@enterprise.com", role="HR Specialist", department="Human Resources", password_hash=default_hash, salary=70000, satisfaction_level=4, workload_score=50),
+            Employee(name="Bob Smith", email="bob.smith@enterprise.com", role="DevOps Engineer", department="Engineering", password_hash=default_hash, salary=80000, satisfaction_level=3, workload_score=75),
         ]
         db.add_all(employees)
         db.commit()

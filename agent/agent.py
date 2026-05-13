@@ -424,11 +424,21 @@ class AgentController:
 
     def _build_performance_summary(self, execution: list) -> str:
         """Build summary for performance insight."""
+        summary_parts = []
         for ex in execution:
             if ex.get("tool") == "analyze_performance_trends" and isinstance(ex.get("detail"), dict):
-                strengths = ", ".join(ex["detail"].get("strengths", []))
-                return f"Performance analysis complete. Key strengths: {strengths}."
-        return "Your performance insights have been generated."
+                detail = ex["detail"]
+                prod = detail.get("productivity", "N/A")
+                att = detail.get("attendance", "N/A")
+                trend = detail.get("trend_summary", "Stable")
+                summary_parts.append(f"Productivity: {prod} | Attendance: {att}")
+                summary_parts.append(f"Trend: {trend}")
+                strengths = ", ".join(detail.get("strengths", []))
+                summary_parts.append(f"Strengths: {strengths}")
+        
+        if summary_parts:
+            return "Performance Analysis Complete — " + " | ".join(summary_parts)
+        return "Performance insights generated for the employee."
 
     def _build_knowledge_summary(self, execution: list) -> str:
         """Build summary for knowledge assistant."""

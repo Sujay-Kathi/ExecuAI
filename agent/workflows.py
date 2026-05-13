@@ -505,7 +505,7 @@ PERFORMANCE_INSIGHT_WORKFLOW = [
     _workflow_step(
         "Analyzing trends and growth areas",
         tool="analyze_performance_trends",
-        args_map=lambda e: {"data": {"tasks_completed": 45, "code_quality": "92%"}},
+        args_map=lambda e: {"data": e.get("fetch_performance_data", {})},
     ),
     _workflow_step("Highlighting strengths and improvement points"),
 ]
@@ -951,6 +951,7 @@ PERFORMANCE_SUMMARY_WORKFLOW = [
 ]
 
 
+<<<<<<< HEAD
 LIST_PENDING_LEAVES_WORKFLOW = [
     _workflow_step("Identified pending leave check intent"),
     _workflow_step(
@@ -964,6 +965,68 @@ LIST_PENDING_LEAVES_WORKFLOW = [
             "text": f"Found {e.get('count', 0)} pending leave applications requiring HR review and authorization." if e.get('count', 0) > 0 else "No pending leave applications found in the database queues."
         }
     )
+=======
+# ────────────────────────────────────────────────────────────
+# 25. Attrition Risk Detection (ML)
+# ────────────────────────────────────────────────────────────
+ATTRITION_RISK_DETECTION_WORKFLOW = [
+    _workflow_step("Identified prediction request"),
+    _workflow_step(
+        "Fetching all employee records",
+        tool="fetch_all_employees",
+    ),
+    _workflow_step(
+        "Loading attrition prediction model",
+        tool="load_ml_model",
+        args_map=lambda e: {"model_name": "attrition_model.pkl"},
+    ),
+    _workflow_step(
+        "Predicting attrition risk per employee",
+        tool="predict_attrition",
+        args_map=lambda e: {
+            "model": e.get("model", {}),
+            "employee_features": e.get("employees", [{}])[0] # Simplified for one or iterative
+        },
+    ),
+    _workflow_step(
+        "Generating risk insights",
+        tool="generate_report",
+        args_map=lambda e: {
+            "type": "attrition_risk",
+            "data": e.get("employees", [])
+        },
+    ),
+]
+
+
+# ────────────────────────────────────────────────────────────
+# 26. Bulk Notifications
+# ────────────────────────────────────────────────────────────
+BULK_NOTIFICATION_WORKFLOW = [
+    _workflow_step("Identified notification request"),
+    _workflow_step(
+        "Fetching recipient group",
+        tool="fetch_employee_group",
+        args_map=lambda e: {"group_type": e.get("group", "all")},
+    ),
+    _workflow_step(
+        "Sending email notifications",
+        tool="send_email",
+        args_map=lambda e: {
+            "to": "multiple@recipients.com",
+            "subject": "Important Company Update",
+            "body": e.get("message", "This is an automated notification."),
+        },
+    ),
+    _workflow_step(
+        "Sending chatbot notifications",
+        tool="send_notification",
+        args_map=lambda e: {
+            "text": e.get("message", "New notification arrived."),
+            "channel": "general"
+        },
+    ),
+>>>>>>> e7df873f5990a4fe94a3cd18df26e250011cb9d8
 ]
 
 
@@ -982,6 +1045,8 @@ WORKFLOW_MAP = {
     "recruitment":          RECRUITMENT_WORKFLOW,
     "policy_assistant":     POLICY_ASSISTANT_WORKFLOW,
     "performance_summary":  PERFORMANCE_SUMMARY_WORKFLOW,
+    "attrition_risk":       ATTRITION_RISK_DETECTION_WORKFLOW,
+    "bulk_notify":          BULK_NOTIFICATION_WORKFLOW,
 
     # New Features
     "task_management":      TASK_MANAGEMENT_WORKFLOW,

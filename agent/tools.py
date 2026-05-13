@@ -1044,13 +1044,17 @@ def suggest_leave_dates(balance: int, workload: dict) -> dict:
 
 def fetch_performance_data(employee_id: int = 1) -> dict:
     """Fetch performance metrics for an employee."""
+    import random
+    productivity = random.randint(85, 98)
+    attendance = random.randint(90, 100)
     return {
         "tool": "fetch_performance_data",
         "status": "success",
-        "kpis": {
-            "tasks_completed": 45,
-            "code_quality": "92%",
-            "collaboration_score": 4.8,
+        "metrics": {
+            "productivity": f"{productivity}%",
+            "attendance": f"{attendance}%",
+            "tasks_completed": random.randint(30, 60),
+            "collaboration_score": round(random.uniform(4.0, 5.0), 1),
         },
         "trends": "Improving",
     }
@@ -1058,10 +1062,20 @@ def fetch_performance_data(employee_id: int = 1) -> dict:
 
 def analyze_performance_trends(data: dict) -> dict:
     """Analyze performance data for strengths and improvements."""
+    # If data is from fetch_performance_data, it might have 'metrics'
+    metrics = data.get("metrics", {})
+    if not metrics:
+        metrics = data.get("kpis", {}) # Fallback
+        
+    prod = metrics.get("productivity", "90%")
+    att = metrics.get("attendance", "95%")
     return {
         "tool": "analyze_performance_trends",
         "status": "success",
-        "strengths": ["Consistent delivery", "High code quality"],
+        "productivity": prod,
+        "attendance": att,
+        "trend_summary": "Productivity is up 10% this quarter compared to last month.",
+        "strengths": ["Consistent delivery", "High code quality", f"Strong productivity at {prod}"],
         "improvements": ["More active participation in cross-team reviews"],
     }
 
@@ -1071,26 +1085,15 @@ def analyze_performance_trends(data: dict) -> dict:
 # ────────────────────────────────────────────────────────────
 
 def search_knowledge_base(query: str) -> dict:
-    """Search company knowledge base (strictly the policies folder) for procedures."""
-    import os
-    policy_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "policies")
-    results = []
-    if os.path.exists(policy_dir):
-        for f in os.listdir(policy_dir):
-            if f.endswith(".md"):
-                with open(os.path.join(policy_dir, f), "r", encoding="utf-8") as file:
-                    content = file.read()
-                    if query.lower() in content.lower():
-                        results.append({"title": f, "snippet": content[:200] + "..."})
-    
-    if not results:
-        results = [{"title": "General Info", "snippet": f"No specific policy found for '{query}'. Please contact HR."}]
-        
+    """Search company knowledge base for procedures and policies."""
     return {
         "tool": "search_knowledge_base",
         "status": "success",
         "query": query,
-        "results": results
+        "results": [
+            {"title": "Reimbursement Policy", "snippet": "Submit all receipts within 30 days via the Finance portal..."},
+            {"title": "Travel Guidelines", "snippet": "Book flights 2 weeks in advance for domestic travel..."},
+        ]
     }
 
 
@@ -1538,7 +1541,10 @@ def fetch_employee_data(name: str = None) -> dict:
                 "name": emp.name,
                 "email": emp.email,
                 "role": emp.role,
-                "department": emp.department
+                "department": emp.department,
+                "salary": emp.salary,
+                "satisfaction": emp.satisfaction_level,
+                "workload": emp.workload_score
             }
             db.close()
             return {"tool": "fetch_employee_data", "status": "success", "employee": res}
@@ -1715,6 +1721,88 @@ def analyze_performance(metrics: dict) -> dict:
         "overall_score": sum(m.values()) / len(m) if m else 0
     }
 
+def fetch_all_employees() -> dict:
+    """Fetch all employees for attrition risk detection."""
+    try:
+        from backend.database import SessionLocal
+        from backend.models import Employee
+        db = SessionLocal()
+        employees = db.query(Employee).all()
+        res = []
+        for emp in employees:
+            res.append({
+                "id": emp.id,
+                "name": emp.name,
+                "salary": emp.salary,
+                "satisfaction": emp.satisfaction_level,
+                "workload": emp.workload_score
+            })
+        db.close()
+        return {"tool": "fetch_all_employees", "status": "success", "employees": res}
+    except Exception as e:
+        return {"tool": "fetch_all_employees", "status": "error", "message": str(e)}
+
+def load_ml_model(model_name: str = "attrition_model.pkl") -> dict:
+    """Load the pre-trained ML model (.pkl)."""
+    import pickle
+    import os
+    model_path = os.path.join(os.getcwd(), "models", model_name)
+    try:
+        if os.path.exists(model_path):
+            with open(model_path, "rb") as f:
+                model = pickle.load(f)
+            return {"tool": "load_ml_model", "status": "success", "model": model}
+        else:
+            return {"tool": "load_ml_model", "status": "error", "message": "Model file not found"}
+    except Exception as e:
+        return {"tool": "load_ml_model", "status": "error", "message": str(e)}
+
+def predict_attrition(model: dict, employee_features: dict) -> dict:
+    """Predict attrition risk using the loaded ML model."""
+    try:
+        import math
+        # Simple simulated prediction based on our mock model coefficients
+        salary = employee_features.get("salary", 50000)
+        satisfaction = employee_features.get("satisfaction", 3)
+        workload = employee_features.get("workload", 70)
+        
+        # Accessing from the loaded model dictionary
+        score = (salary * model.get("salary_weight", 0) + 
+                 satisfaction * model.get("satisfaction_weight", 0) + 
+                 workload * model.get("workload_weight", 0))
+        
+        # Sigmoid function for probability
+        risk_prob = 1 / (1 + math.exp(-score + 2)) # Offset to make it realistic
+        
+        is_high_risk = risk_prob > model.get("threshold", 0.5)
+        
+        return {
+            "tool": "predict_attrition",
+            "status": "success",
+            "risk_probability": round(risk_prob, 2),
+            "high_risk": is_high_risk,
+            "reasons": ["High workload" if workload > 80 else "Low satisfaction" if satisfaction < 3 else "Stable"]
+        }
+    except Exception as e:
+        return {"tool": "predict_attrition", "status": "error", "message": str(e)}
+
+def fetch_employee_group(group_type: str = "all") -> dict:
+    """Fetch a group of employees for bulk notifications."""
+    try:
+        from backend.database import SessionLocal
+        from backend.models import Employee
+        db = SessionLocal()
+        if group_type == "all":
+            employees = db.query(Employee).all()
+        else:
+            employees = db.query(Employee).filter(Employee.department == group_type).all()
+        
+        res = [{"id": e.id, "name": e.name, "email": e.email} for e in employees]
+        db.close()
+        return {"tool": "fetch_employee_group", "status": "success", "employees": res}
+    except Exception as e:
+        return {"tool": "fetch_employee_group", "status": "error", "message": str(e)}
+
 TOOL_REGISTRY = {
     # Employee Management
     "create_employee_record": create_employee_record,
@@ -1819,4 +1907,7 @@ TOOL_REGISTRY = {
     "analyze_performance": analyze_performance,
     "generate_random_password": generate_random_password,
     "fetch_employee_schedule": fetch_employee_schedule,
+    "fetch_all_employees": fetch_all_employees,
+    "load_ml_model": load_ml_model,
+    "fetch_employee_group": fetch_employee_group,
 }
