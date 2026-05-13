@@ -17,9 +17,6 @@ INTENT_TRIGGERS = [
     ("system_provisioning",  [
         "setup system for", "provision system", "full setup",
     ]),
-    ("access_management",    [
-        "give", "access to", "grant access", "permission for",
-    ]),
     ("integration_management", [
         "connect hr", "integrate system", "sync data between", "link systems",
         "connect services",

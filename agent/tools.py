@@ -1447,6 +1447,25 @@ def update_candidate_status(candidate_id: int, status: str) -> dict:
     except Exception as e:
         return {"tool": "update_candidate_status", "status": "error", "message": str(e)}
 
+def generate_random_password() -> str:
+    """Generate a random password with words."""
+    import random
+    words = ["apple", "banana", "cherry", "dragon", "eagle", "falcon", "grape", "honey", "iron", "joker"]
+    return "-".join(random.sample(words, 3)) + str(random.randint(10, 99))
+
+def fetch_employee_schedule(name: str) -> dict:
+    """Fetch all meeting and work dates for an employee."""
+    from datetime import datetime, timedelta
+    now = datetime.now()
+    schedule = [
+        {"activity": "Team Sync", "date": (now + timedelta(days=1)).strftime("%Y-%m-%d 10:00 AM")},
+        {"activity": "Project Review", "date": (now + timedelta(days=2)).strftime("%Y-%m-%d 02:00 PM")},
+        {"activity": "Client Call", "date": (now + timedelta(days=3)).strftime("%Y-%m-%d 11:30 AM")},
+        {"activity": "Internal Training", "date": (now + timedelta(days=5)).strftime("%Y-%m-%d 09:00 AM")},
+    ]
+    formatted = "\n".join([f"- {s['activity']}: {s['date']}" for s in schedule])
+    return {"tool": "fetch_employee_schedule", "status": "success", "name": name, "schedule": formatted}
+
 # ── Master IT/Admin Tools (Strict Spec) ──────────────────────────
 
 def fetch_employee_data(name: str = None) -> dict:
@@ -1744,4 +1763,6 @@ TOOL_REGISTRY = {
     "summarize_text": summarize_text,
     "fetch_performance_metrics": fetch_performance_metrics,
     "analyze_performance": analyze_performance,
+    "generate_random_password": generate_random_password,
+    "fetch_employee_schedule": fetch_employee_schedule,
 }
