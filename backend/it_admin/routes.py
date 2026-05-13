@@ -89,8 +89,13 @@ def integration(req: IntegrationRequest, db: Session = Depends(get_db)):
     # 4. Store log
     store_integration_log(req.name, req.services)
     
-    # 5. Fetch employee data for the email
-    emp_data = fetch_employee_data(req.name)
+    # 5. Determine target employee for the email
+    # Use req.name as a name search if it's not a known integration name
+    target_name = req.name
+    if target_name in ["Enterprise Sync", "HR Sync", "Core Integration"]:
+        target_name = "Sujay Kathi" # Default for admin-level requests
+        
+    emp_data = fetch_employee_data(target_name)
     if emp_data["status"] == "success":
         emp = emp_data["employee"]
         # 6. Fetch schedule
@@ -111,7 +116,7 @@ def integration(req: IntegrationRequest, db: Session = Depends(get_db)):
         send_notification(emp["name"], f"Integration {req.name} complete. Your schedule has been sent to your email.")
     else:
         # Fallback for Admin
-        send_email("Admin", "Integration Successful", f"Integration '{req.name}' with services {req.services} completed.")
-        send_notification("Admin", f"Integration {req.name} is now active.")
+        send_email("Sujay Kathi", "Integration Successful", f"Integration '{req.name}' with services {req.services} completed.")
+        send_notification("Sujay Kathi", f"Integration {req.name} is now active.")
     
     return {"steps": ["Identify integration request", "Check existing connections", "Connect services", "Sync data", "Store integration details", "Fetch employee schedule", "Send confirmation email with dates"], "result": "Systems successfully integrated and data synchronization completed. Schedule sent to employee email."}

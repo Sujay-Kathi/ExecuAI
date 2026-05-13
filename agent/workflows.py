@@ -733,14 +733,14 @@ INTEGRATION_MANAGEMENT_WORKFLOW = [
     _workflow_step(
         "Fetch employee schedule and work dates",
         tool="fetch_employee_schedule",
-        args_map=lambda e: {"name": e.get("name", "User")},
+        args_map=lambda e: {"name": e.get("name") if e.get("name") and e.get("name") != "User" else "Sujay Kathi"},
     ),
     _workflow_step("Validate connection"),
     _workflow_step(
         "Send confirmation email with schedule",
         tool="send_email",
         args_map=lambda e: {
-            "to": e.get("name", "User"),
+            "to": e.get("name") if e.get("name") and e.get("name") != "User" else "Sujay Kathi",
             "subject": "Integration Successful - Your Upcoming Schedule",
             "body": (
                 f"Hello {e.get('name', 'User')},\n\n"
@@ -754,7 +754,7 @@ INTEGRATION_MANAGEMENT_WORKFLOW = [
     _workflow_step(
         "Notify via chatbot",
         tool="send_notification",
-        args_map=lambda e: {"to": e.get("name", "User"), "message": "Integration and sync complete. Your schedule has been sent to your email."},
+        args_map=lambda e: {"to": e.get("name") if e.get("name") and e.get("name") != "User" else "Sujay Kathi", "message": "Integration and sync complete. Your schedule has been sent to your email."},
     ),
 ]
 SEND_MESSAGE_WORKFLOW = [
