@@ -641,8 +641,114 @@ RETENTION_ANALYSIS_WORKFLOW = [
  
  
 # ────────────────────────────────────────────────────────────
-# 20. Direct Messaging / Reminders to Others
+# 21. FEATURE 1: System Provisioning
 # ────────────────────────────────────────────────────────────
+SYSTEM_PROVISIONING_WORKFLOW = [
+    _workflow_step("Identifying provisioning request"),
+    _workflow_step("Fetching employee details"),
+    _workflow_step(
+        "Creating company email",
+        tool="create_company_email",
+        args_map=lambda e: {"name": e.get("name", "Rahul")},
+    ),
+    _workflow_step(
+        "Creating internal account",
+        tool="create_user_account",
+        args_map=lambda e: {"name": e.get("name", "Rahul")},
+    ),
+    _workflow_step(
+        "Assigning tool access (GitHub, Slack)",
+        tool="assign_tools_access",
+        args_map=lambda e: {
+            "name": e.get("name", "Rahul"),
+            "tools": ["GitHub", "Slack", "Jira"]
+        },
+    ),
+    _workflow_step(
+        "Sending credentials via email",
+        tool="send_email",
+        args_map=lambda e: {
+            "to": e.get("name", "Rahul"),
+            "subject": "System Access Provisioned",
+            "body": "Your corporate systems are ready. Credentials have been generated and securely sent."
+        },
+    ),
+    _workflow_step(
+        "Notifying team of new setup",
+        tool="send_notification",
+        args_map=lambda e: {
+            "text": f"System setup completed for {e.get('name', 'Rahul')}. Access to Slack and GitHub granted.",
+            "channel": "general"
+        }
+    ),
+]
+
+
+# ────────────────────────────────────────────────────────────
+# 22. FEATURE 2: Password & Security Management
+# ────────────────────────────────────────────────────────────
+SECURITY_MANAGEMENT_WORKFLOW = [
+    _workflow_step("Identifying password reset request"),
+    _workflow_step(
+        "Verifying user identity",
+        tool="verify_user_identity",
+        args_map=lambda e: {"name": e.get("name", "User")},
+    ),
+    _workflow_step(
+        "Generating secure password reset",
+        tool="reset_user_password",
+        args_map=lambda e: {"name": e.get("name", "User")},
+    ),
+    _workflow_step(
+        "Updating authentication system",
+        tool="update_authentication",
+        args_map=lambda e: {"name": e.get("name", "User")},
+    ),
+    _workflow_step(
+        "Sending reset link via email",
+        tool="send_email",
+        args_map=lambda e: {
+            "to": e.get("name", "User"),
+            "subject": "Password Reset Link",
+            "body": "Your password has been reset. Use this link to set a new one: https://execuai.com/reset-link"
+        },
+    ),
+    _workflow_step("Logging security action for audit trail"),
+]
+
+
+# ────────────────────────────────────────────────────────────
+# 23. FEATURE 3: Integration Management
+# ────────────────────────────────────────────────────────────
+INTEGRATION_MANAGEMENT_WORKFLOW = [
+    _workflow_step("Identifying integration request"),
+    _workflow_step(
+        "Checking existing system connections",
+        tool="check_system_connections",
+    ),
+    _workflow_step(
+        "Connecting services via API",
+        tool="connect_service_api",
+        args_map=lambda e: {"service": e.get("system", "HR System")},
+    ),
+    _workflow_step(
+        "Synchronizing data across systems",
+        tool="sync_data_between_systems",
+        args_map=lambda e: {
+            "source": e.get("system", "HR"),
+            "target": "Email/Calendar"
+        },
+    ),
+    _workflow_step("Validating integration success"),
+    _workflow_step(
+        "Notifying administrator",
+        tool="send_notification",
+        args_map=lambda e: {
+            "text": f"Integration successful: {e.get('system', 'HR')} system now synced with Email and Calendar.",
+            "channel": "admin"
+        }
+    ),
+]
 SEND_MESSAGE_WORKFLOW = [
     _workflow_step("Identified message request for a colleague"),
     _workflow_step(
@@ -687,6 +793,11 @@ WORKFLOW_MAP = {
     "notification_intelligence": NOTIFICATION_INTELLIGENCE_WORKFLOW,
     "retention_analysis":   RETENTION_ANALYSIS_WORKFLOW,
     "send_message":         SEND_MESSAGE_WORKFLOW,
+
+    # Master IT/Admin Workflows
+    "system_provisioning":  SYSTEM_PROVISIONING_WORKFLOW,
+    "security_management":  SECURITY_MANAGEMENT_WORKFLOW,
+    "integration_management": INTEGRATION_MANAGEMENT_WORKFLOW,
 }
 
 # ── Chaining rules: intent → list of follow-up intents ──────

@@ -104,6 +104,17 @@ INTENT_TRIGGERS = [
         "deep audit", "retention analysis", "comprehensive report",
         "full insight", "deep dive on employee",
     ]),
+    # IT/Admin Master Features (requested by user)
+    ("system_provisioning",  [
+        "setup system for", "provision system", "full setup",
+    ]),
+    ("security_management",  [
+        "reset my password", "security reset", "account security",
+    ]),
+    ("integration_management", [
+        "connect hr", "integrate system", "sync data between", "link systems",
+        "connect services",
+    ]),
 ]
 
 
