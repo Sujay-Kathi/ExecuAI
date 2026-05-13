@@ -3,6 +3,7 @@ import os
 import sys
 import hashlib
 from datetime import datetime, timedelta, timezone
+from sqlalchemy import text
 
 # Add project root to path
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
