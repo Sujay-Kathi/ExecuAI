@@ -222,6 +222,15 @@ def extract_entities(text: str, intent: str) -> dict:
             elif "remote" in lower: entities["query"] = "remote"
             elif "conduct" in lower: entities["query"] = "conduct"
 
+    # If no name extracted, and it's a personal feature, default to 'Sujay Kathi' (current user context)
+    personal_intents = [
+        "integration_management", "performance_insight", "work_summary", 
+        "leave_request", "it_request_assistant", "notification_intelligence",
+        "task_management", "workload_optimization", "health_check"
+    ]
+    if not entities.get("name") and intent in personal_intents:
+        entities["name"] = "Sujay Kathi"
+        
     return entities
 
 
