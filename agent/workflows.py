@@ -685,7 +685,7 @@ SYSTEM_PROVISIONING_WORKFLOW = [
                 f"Your system setup is complete. You now have access to GitHub, Slack, and internal tools.\n\n"
                 f"--- CORPORATE CREDENTIALS ---\n"
                 f"Username: {e.get('employee', {}).get('email', 'Pending')}\n"
-                f"Password: {e.get('generate_random_password', {}).get('result', 'Welcome@123')}\n\n"
+                f"Password: {e.get('password', 'Welcome@123')}\n\n"
                 f"--- GITHUB ACCESS ---\n"
                 f"Username: {e.get('name', 'user').lower().replace(' ', '_')}_gh\n"
                 f"Password: (Use SSO with Corporate Credentials)\n\n"
@@ -704,7 +704,7 @@ SYSTEM_PROVISIONING_WORKFLOW = [
             "to": e.get("name", "User"), 
             "message": (
                 f"System setup complete for {e.get('name', 'User')}. "
-                f"Credentials: {e.get('employee', {}).get('email', 'Pending')} / {e.get('generate_random_password', {}).get('result', 'Welcome@123')}. "
+                f"Credentials: {e.get('employee', {}).get('email', 'Pending')} / {e.get('password', 'Welcome@123')}. "
                 f"GitHub and Slack have been provisioned via SSO."
             )
         },
@@ -753,7 +753,7 @@ INTEGRATION_MANAGEMENT_WORKFLOW = [
                 f"Hello {e.get('name', 'User')},\n\n"
                 f"The HR system has been successfully connected with your email and calendar.\n\n"
                 f"YOUR UPCOMING WORK & MEETING DATES:\n"
-                f"{e.get('fetch_employee_schedule', {}).get('schedule', 'No upcoming events found.')}\n\n"
+                f"{e.get('schedule', 'No upcoming events found.')}\n\n"
                 f"Best regards,\nExecuAI IT Team"
             )
         },
@@ -765,7 +765,7 @@ INTEGRATION_MANAGEMENT_WORKFLOW = [
             "to": e.get("name") if e.get("name") and e.get("name") != "User" else "Sujay Kathi", 
             "message": (
                 f"HR system connected with email and calendar for {e.get('name', 'User')}. "
-                f"Upcoming dates:\n{e.get('fetch_employee_schedule', {}).get('schedule', 'None found.')}"
+                f"Upcoming dates:\n{e.get('schedule', 'None found.')}"
             )
         },
     ),

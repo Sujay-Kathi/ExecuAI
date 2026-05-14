@@ -1503,11 +1503,12 @@ def update_candidate_status(candidate_id: int, status: str) -> dict:
             "message": str(e)
         }
 
-def generate_random_password() -> str:
+def generate_random_password() -> dict:
     """Generate a random password with words."""
     import random
     words = ["apple", "banana", "cherry", "dragon", "eagle", "falcon", "grape", "honey", "iron", "joker"]
-    return "-".join(random.sample(words, 3)) + str(random.randint(10, 99))
+    password = "-".join(random.sample(words, 3)) + str(random.randint(10, 99))
+    return {"tool": "generate_random_password", "status": "success", "password": password}
 
 def fetch_employee_schedule(name: str) -> dict:
     """Fetch all meeting and work dates for an employee."""
