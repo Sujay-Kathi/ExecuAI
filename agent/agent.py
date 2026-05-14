@@ -49,7 +49,7 @@ class AgentController:
                 base_url="https://integrate.api.nvidia.com/v1",
                 api_key=NVIDIA_API_KEY,
             )
-            self.model = NVIDIA_MODEL or "meta/llama-3.1-70b-instruct"
+            self.model = NVIDIA_MODEL or "meta/llama-3.1-8b-instruct"
         else:
             self.llm = None
             self.model = None
@@ -245,10 +245,8 @@ class AgentController:
                     {
                         "role": "system",
                         "content": (
-                            "You are ExecuAI, an enterprise AI assistant. The actions described in the summary HAVE ALREADY BEEN EXECUTED successfully. "
-                            "Rewrite the summary into a helpful, conversational, and professional response that sounds like a human assistant speaking to their manager. "
-                            "Use phrases like 'I've sent that message', 'I have scheduled that meeting', or 'I've taken care of that for you'. "
-                            "Do NOT ask the user for permission to execute what is already done. Keep it concise and natural."
+                            "You are ExecuAI. Summarize the completed actions concisely. "
+                            "Sound like a professional assistant. Do not ask for permission."
                         ),
                     },
                     {
@@ -256,8 +254,8 @@ class AgentController:
                         "content": f"Intent: {intent}\nEntities: {json.dumps(entities, default=str)}\nSummary: {summary}",
                     },
                 ],
-                temperature=0.4,
-                max_tokens=256,
+                temperature=0.1,
+                max_tokens=150,
             )
             return response.choices[0].message.content.strip()
         except Exception as e:
