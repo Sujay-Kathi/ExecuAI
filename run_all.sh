@@ -27,7 +27,7 @@ echo "🚀 Starting ExecuAI System..."
 # 1. Start Backend
 echo "📡 Starting Backend (FastAPI) on port 8000..."
 # Using the python executable from the virtual environment
-./.venv/bin/python -m uvicorn backend.main:app --reload &
+./.venv/bin/python -m uvicorn backend.main:app --host 0.0.0.0 --reload &
 BACKEND_PID=$!
 
 # 2. Wait for 5 seconds
@@ -43,7 +43,7 @@ if [ ! -f "frontend/node_modules/.bin/vite" ]; then
 fi
 
 # Navigate to frontend directory and run dev server in background
-(cd frontend && npm run dev) &
+(cd frontend && npm run dev --host) &
 FRONTEND_PID=$!
 
 echo "✨ Both systems are now running!"

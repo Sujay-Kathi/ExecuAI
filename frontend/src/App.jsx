@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import './App.css';
 
+const API_BASE = `http://${window.location.hostname}:8000`;
+
 function App() {
   const [messages, setMessages] = useState([
     { role: 'ai', text: 'Hello! I am **ExecuAI** — your Enterprise AI Assistant. Try asking anything or initiate live peer messaging via:\n\n• "lets chat @[colleague name]"\n• Direct queries on system records' }
@@ -67,7 +69,7 @@ function App() {
   // Fetch remote pending list periodically for HR review sync
   useEffect(() => {
     if (user?.role?.toLowerCase().includes('hr') || user?.department?.toLowerCase().includes('human resources')) {
-      fetch('http://localhost:8000/api/chat/leave/list')
+      fetch(`${API_BASE}/api/chat/leave/list`)
         .then(res => res.json())
         .then(data => {
           if (Array.isArray(data) && data.length > 0) {
@@ -99,7 +101,7 @@ function App() {
   // Fetch accounts on mount and periodically refresh online presence status
   useEffect(() => {
     const fetchAccounts = () => {
-      fetch('http://localhost:8000/api/auth/employees', { cache: 'no-store' })
+      fetch(`${API_BASE}/api/auth/employees`, { cache: 'no-store' })
         .then(res => res.json())
         .then(data => {
           if (Array.isArray(data)) {
@@ -118,7 +120,7 @@ function App() {
     if (!user) return;
 
     const pollInterval = setInterval(() => {
-      fetch(`http://localhost:8000/api/chat/peer/poll?email=${encodeURIComponent(user.email)}`)
+      fetch(`${API_BASE}/api/chat/peer/poll?email=${encodeURIComponent(user.email)}`)
         .then(res => res.json())
         .then(data => {
           if (Array.isArray(data) && data.length > 0) {
@@ -215,7 +217,7 @@ function App() {
     ]);
 
     try {
-      await fetch('http://localhost:8000/api/chat/leave/apply', {
+      await fetch(`${API_BASE}/api/chat/leave/apply`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -234,7 +236,7 @@ function App() {
   const handleLeaveClose = async (id, status) => {
     setLeaveApplications(prev => prev.map(app => app.id === id ? { ...app, status } : app));
     try {
-      await fetch('http://localhost:8000/api/chat/leave/close', {
+      await fetch(`${API_BASE}/api/chat/leave/close`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ leave_id: id, status })
@@ -254,7 +256,7 @@ function App() {
       setMessages(prev => [...prev, { role: 'user', text: userMessage, isPeer: true }]);
       setInput('');
 
-      fetch('http://localhost:8000/api/chat/peer/send', {
+      fetch(`${API_BASE}/api/chat/peer/send`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -286,7 +288,7 @@ function App() {
     setActiveStep(0);
 
     try {
-      const res = await fetch('http://localhost:8000/api/chat', {
+      const res = await fetch(`${API_BASE}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: userMessage, user_role: user?.role || 'employee' })
@@ -348,7 +350,7 @@ function App() {
     setIsLoggingIn(true);
     setLoginError('');
     try {
-      const res = await fetch('http://localhost:8000/api/auth/login', {
+      const res = await fetch(`${API_BASE}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: loginEmail.trim(), password: loginPassword })
@@ -370,7 +372,7 @@ function App() {
 
   const handleLogout = () => {
     if (user) {
-      fetch('http://localhost:8000/api/auth/logout', {
+      fetch(`${API_BASE}/api/auth/logout`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: user.email })
@@ -388,7 +390,7 @@ function App() {
     setPasswordResetErr('');
 
     try {
-      const res = await fetch('http://localhost:8000/api/auth/reset-password', {
+      const res = await fetch(`${API_BASE}/api/auth/reset-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

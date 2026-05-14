@@ -11,14 +11,14 @@ if not exist ".venv" (
 echo 🚀 Starting ExecuAI System...
 
 echo 📡 Starting Backend (FastAPI)...
-start cmd /k ".\.venv\Scripts\python.exe -m uvicorn backend.main:app --reload"
+start cmd /k ".\.venv\Scripts\python.exe -m uvicorn backend.main:app --host 0.0.0.0 --reload"
 
 echo ⏳ Waiting 5 seconds...
 timeout /t 5 /nobreak > nul
 
 echo 💻 Starting Frontend (Vite)...
 cd frontend
-start cmd /k "npm run dev"
+start cmd /k "npm run dev --host"
 
 echo ✨ Both systems are now running!
 pause
