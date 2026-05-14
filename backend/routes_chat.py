@@ -65,12 +65,29 @@ def chat(payload: ChatRequest):
 
 
 @router.post("/peer/send")
-def send_peer_message(payload: PeerMessagePayload):
-    """Broadcast a real-time message to a specific active employee terminal feed."""
+def send_peer_message(payload: PeerMessagePayload, db: Session = Depends(get_db)):
+    """Broadcast a real-time message to a specific active employee terminal feed and send an email backup."""
     rec = payload.recipient_email.strip()
+    
+    # 1. Real-time feed delivery
     if rec not in PEER_MESSAGES:
         PEER_MESSAGES[rec] = []
     PEER_MESSAGES[rec].append(payload.model_dump())
+    
+    # 2. Email backup delivery (Ensure offline colleagues get the notification)
+    from agent.tools import send_notification_email
+    send_notification_email(
+        to=rec,
+        subject=f"Message from {payload.sender_name} (via ExecuAI)",
+        body=(
+            f"Hi,\n\n"
+            f"You have received a new message from your colleague {payload.sender_name} ({payload.sender_role}) via ExecuAI:\n\n"
+            f"\"{payload.text}\"\n\n"
+            f"Please log in to your ExecuAI terminal to respond."
+        ),
+        recipient_name=None # Resolved via email in the tool
+    )
+    
     return {"status": "sent"}
 
 

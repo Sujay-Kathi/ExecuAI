@@ -23,9 +23,11 @@ if ROOT not in sys.path:
 try:
     from backend.database import SessionLocal
     from backend.models import Employee, LeaveRequest, Meeting
+    from agent.integrations import send_real_email
 except ImportError:
     # Fallback simulation ORM classes if executed standalone outside virtualenv
     SessionLocal = None
+    send_real_email = None
 
 
 # =====================================================================
@@ -130,11 +132,17 @@ def store_leave_application(payload: Dict[str, Any]) -> int:
 
 
 def send_email(to_email: str, subject: str, body: str) -> bool:
-    """Simulate real SMTP Gmail routing to the HR department."""
+    """Send a real SMTP email via the integration layer, with a simulation fallback."""
+    if send_real_email:
+        result = send_real_email(to=to_email, subject=subject, body=body)
+        if result:
+            return True
+            
+    # Fallback simulation for logging
     log_path = os.path.join(ROOT, "sent_emails_simulation.log")
     try:
         with open(log_path, "a", encoding="utf-8") as f:
-            f.write(f"[{datetime.datetime.now().isoformat()}] SMTP ROUTE: To={to_email} | Sub={subject}\n{body}\n{'-'*40}\n")
+            f.write(f"[{datetime.datetime.now().isoformat()}] SMTP ROUTE (SIMULATED): To={to_email} | Sub={subject}\n{body}\n{'-'*40}\n")
     except Exception:
         pass
     return True
