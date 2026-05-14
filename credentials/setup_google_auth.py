@@ -13,11 +13,7 @@ You will NOT need to run this again unless the token expires.
 """
 import os
 import sys
-import supabase
-import google.auth.transport.requests
-import google.oauth2.credentials
-import google_auth_oauthlib.flow
-
+# Project-specific imports (loaded inside main for better error handling)
 # Add project root to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -47,6 +43,7 @@ def main():
         from google.auth.transport.requests import Request
         from google.oauth2.credentials import Credentials
         from google_auth_oauthlib.flow import InstalledAppFlow
+        from googleapiclient.discovery import build
     except ImportError:
         print("❌ Missing packages. Run:")
         print("   pip install google-auth-oauthlib google-auth-httplib2 google-api-python-client")
@@ -76,7 +73,6 @@ def main():
 
     # Verify by listing next 3 events
     try:
-        from googleapiclient.discovery import build
         from datetime import datetime, timezone
 
         service = build("calendar", "v3", credentials=creds)
