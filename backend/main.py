@@ -25,13 +25,12 @@ from backend.hr.routes import router as hr_router
 from backend.it_admin.routes import router as it_admin_router
 
 # ── Shared routers ───────────────────────────────────
+from backend.auth.routes import router as auth_router
 from backend.routes_chat import router as chat_router
 from backend.routes_ml import router as ml_router
 
 # ── Legacy routers (kept for backward compat, can be removed later) ──
-from backend.routes_employees import router as employees_router
-from backend.routes_leaves import router as leaves_router
-from backend.routes_meetings import router as meetings_router
+# (Removed)
 
 # ── Create app ───────────────────────────────────────
 app = FastAPI(title=APP_TITLE, version=APP_VERSION)
@@ -39,7 +38,15 @@ app = FastAPI(title=APP_TITLE, version=APP_VERSION)
 # ── CORS (allow React frontend) ─────────────────────
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],   # Vite dev server
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:5174",
+        "http://127.0.0.1:5174",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000"
+    ],
+    allow_origin_regex="https?://.*",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -51,13 +58,12 @@ app.include_router(hr_router)
 app.include_router(it_admin_router)
 
 # ── Register shared routers ─────────────────────────
+app.include_router(auth_router)
 app.include_router(chat_router)
 app.include_router(ml_router)
 
 # ── Register legacy routers ─────────────────────────
-app.include_router(employees_router)
-app.include_router(leaves_router)
-app.include_router(meetings_router)
+# (Removed)
 
 
 # ── Startup event ───────────────────────────────────

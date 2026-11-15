@@ -26,6 +26,7 @@ class EmployeeOut(BaseModel):
     role: str
     department: str
     date_joined: datetime
+    is_online: Optional[bool] = False
 
     model_config = {"from_attributes": True}
 
@@ -104,3 +105,11 @@ class AttritionInput(BaseModel):
 class AttritionResult(BaseModel):
     prediction: str                 # "Likely to Leave" | "Stable"
     confidence: float
+
+
+# ──────────────── Authentication ────────────────
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+

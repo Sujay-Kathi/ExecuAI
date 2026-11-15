@@ -1,12 +1,17 @@
 """
 Chat / Agent routes — the main conversational endpoint.
 
-== ASSIGNMENT: AI Engineer ==
-  - Wire this to the AgentController in agent/agent.py.
-  - Process user intent, call tools, return structured response.
+Exposes the AI agent via /api/chat for the frontend to consume.
+Returns both the human-readable result and the full execution log.
+Also handles real-time inter-employee live peer-to-peer messaging.
 """
-from fastapi import APIRouter
-from backend.schemas import ChatRequest, ChatResponse
+from fastapi import APIRouter, Depends
+from pydantic import BaseModel
+from typing import Optional, List, Dict, Any
+import datetime
+from sqlalchemy.orm import Session
+from backend.database import get_db
+from backend.models import LeaveRequest, Employee
 from agent.agent import AgentController
 
 router = APIRouter(prefix="/api/chat", tags=["Chat"])
@@ -14,15 +19,200 @@ router = APIRouter(prefix="/api/chat", tags=["Chat"])
 agent = AgentController()
 
 
-@router.post("/", response_model=ChatResponse)
+class ChatRequest(BaseModel):
+    message: str
+    user_role: Optional[str] = "employee"
+
+
+class ChatResponse(BaseModel):
+    reply: str
+    execution_log: List[str]
+    intent: str = "general"
+    entities: dict = {}
+    tool_outputs: dict = {}
+    execution_time: float = 0.0
+
+
+class PeerMessagePayload(BaseModel):
+    sender_email: str
+    sender_name: str
+    sender_role: str
+    recipient_email: str
+    text: str
+
+
+# In-memory storage mapping recipient_email -> list of pending messages dicts
+PEER_MESSAGES: Dict[str, List[Dict]] = {}
+
+
+@router.post("", response_model=ChatResponse)
 def chat(payload: ChatRequest):
     """
     Main chat endpoint.
     Receives a natural-language request and returns the agent's response
-    along with an execution log.
+    along with a detailed execution log.
     """
     result = agent.process_request(payload.message)
+
     return ChatResponse(
-        reply=result["message"],
-        execution_log=result["steps_executed"]
+        reply=result.get("result", result.get("message", "Request processed.")),
+        execution_log=result.get("steps", result.get("steps_executed", [])),
+        intent=result.get("intent", "general"),
+        entities=result.get("entities", {}),
+        tool_outputs=result.get("tool_outputs", {}),
+        execution_time=result.get("execution_time", 0.0),
     )
+
+
+@router.post("/peer/send")
+def send_peer_message(payload: PeerMessagePayload, db: Session = Depends(get_db)):
+    """Broadcast a real-time message to a specific active employee terminal feed and send an email backup."""
+    rec = payload.recipient_email.strip()
+    
+    # 1. Real-time feed delivery
+    if rec not in PEER_MESSAGES:
+        PEER_MESSAGES[rec] = []
+    PEER_MESSAGES[rec].append(payload.model_dump())
+    
+    # 2. Email backup delivery (Ensure offline colleagues get the notification)
+    from agent.tools import send_notification_email
+    send_notification_email(
+        to=rec,
+        subject=f"Message from {payload.sender_name} (via ExecuAI)",
+        body=(
+            f"Hi,\n\n"
+            f"You have received a new message from your colleague {payload.sender_name} ({payload.sender_role}) via ExecuAI:\n\n"
+            f"\"{payload.text}\"\n\n"
+            f"Please log in to your ExecuAI terminal to respond."
+        ),
+        recipient_name=None # Resolved via email in the tool
+    )
+    
+    return {"status": "sent"}
+
+
+@router.get("/peer/poll")
+def poll_peer_messages(email: str):
+    """Poll for live incoming direct communications directed to this employee."""
+    rec = email.strip()
+    msgs = PEER_MESSAGES.get(rec, [])
+    if msgs:
+        PEER_MESSAGES[rec] = []
+    return msgs
+
+
+# ── Leave Management Endpoints for Frontend Integration ──
+
+class LeaveApplyPayload(BaseModel):
+    email: str
+    leave_type: str
+    reason: str
+
+
+class LeaveClosePayload(BaseModel):
+    leave_id: int
+    status: str
+
+
+@router.post("/leave/apply")
+def apply_leave_api(payload: LeaveApplyPayload, db: Session = Depends(get_db)):
+    """Persist a newly applied leave request from the frontend form into the database."""
+    emp = db.query(Employee).filter(Employee.email == payload.email.strip()).first()
+    emp_id = emp.id if emp else 1
+    
+    now = datetime.datetime.now(datetime.timezone.utc)
+    tomorrow = now + datetime.timedelta(days=1)
+    
+    leave_rec = LeaveRequest(
+        employee_id=emp_id,
+        leave_type=payload.leave_type or "casual",
+        start_date=tomorrow,
+        end_date=tomorrow,
+        reason=payload.reason,
+        status="pending"
+    )
+    db.add(leave_rec)
+    db.commit()
+    db.refresh(leave_rec)
+    
+    from agent.tools import send_notification_email
+    hr_users = db.query(Employee).filter(Employee.role.ilike("%HR%")).all()
+    emp_name = emp.name if emp else "Employee"
+    for hr in hr_users:
+        msg = {
+            "sender_email": "system@enterprise.com",
+            "sender_name": "System Automations",
+            "sender_role": "System",
+            "recipient_email": hr.email,
+            "text": f"🔔 **New Leave Application**\n{emp_name} has applied for {payload.leave_type} leave.\nReason: {payload.reason}"
+        }
+        if hr.email not in PEER_MESSAGES:
+            PEER_MESSAGES[hr.email] = []
+        PEER_MESSAGES[hr.email].append(msg)
+        
+        send_notification_email(
+            to=hr.email, 
+            subject=f"Leave Request: {emp_name}", 
+            body=f"Please review the leave request from {emp_name}.\nType: {payload.leave_type}\nReason: {payload.reason}",
+            recipient_name=hr.name
+        )
+    
+    return {
+        "status": "success",
+        "leave_id": leave_rec.id,
+        "employee_name": emp_name,
+        "employee_role": emp.role if emp else "Staff",
+        "remaining_balance": 12
+    }
+
+
+@router.get("/leave/list")
+def list_pending_leaves(db: Session = Depends(get_db)):
+    """Fetch all pending leave applications for display in the HR review dashboard."""
+    leaves = db.query(LeaveRequest).filter(LeaveRequest.status == "pending").all()
+    results = []
+    for l in leaves:
+        emp = db.query(Employee).filter(Employee.id == l.employee_id).first()
+        results.append({
+            "id": l.id,
+            "employee_name": emp.name if emp else f"User #{l.employee_id}",
+            "employee_role": emp.role if emp else "Staff",
+            "leave_type": l.leave_type,
+            "reason": l.reason,
+            "created_at": l.created_at.isoformat() if hasattr(l.created_at, 'isoformat') else str(l.created_at)
+        })
+    return results
+
+
+@router.post("/leave/close")
+def close_leave_api(payload: LeaveClosePayload, db: Session = Depends(get_db)):
+    """Approve or reject a leave application, updating its status to closed."""
+    leave_rec = db.query(LeaveRequest).filter(LeaveRequest.id == payload.leave_id).first()
+    if leave_rec:
+        leave_rec.status = payload.status
+        db.commit()
+        
+        from agent.tools import send_notification_email
+        applicant = db.query(Employee).filter(Employee.id == leave_rec.employee_id).first()
+        if applicant:
+            msg = {
+                "sender_email": "system@enterprise.com",
+                "sender_name": "HR Review System",
+                "sender_role": "System",
+                "recipient_email": applicant.email,
+                "text": f"📝 **Leave Application {payload.status.capitalize()}**\nYour {leave_rec.leave_type} leave application has been {payload.status} by HR."
+            }
+            if applicant.email not in PEER_MESSAGES:
+                PEER_MESSAGES[applicant.email] = []
+            PEER_MESSAGES[applicant.email].append(msg)
+            
+            send_notification_email(
+                to=applicant.email,
+                subject=f"Leave Application {payload.status.capitalize()}",
+                body=f"Your {leave_rec.leave_type} leave application has been {payload.status} by HR.",
+                recipient_name=applicant.name
+            )
+
+        return {"status": "closed", "id": payload.leave_id, "final_status": payload.status}
+    return {"status": "not_found"}
+
