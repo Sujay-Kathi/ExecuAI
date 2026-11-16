@@ -32,6 +32,8 @@ function App() {
 
   const [seedAccounts, setSeedAccounts] = useState(initialAccounts);
   const [peerChatUser, setPeerChatUser] = useState(null);
+  const [sessionId] = useState(() => 'sess_' + Math.random().toString(36).substring(2, 10));
+  const [selectedMentions, setSelectedMentions] = useState([]);
 
   // Input typing feedback state
   const [isFocused, setIsFocused] = useState(false);
@@ -156,7 +158,53 @@ function App() {
   }, [isLoading, activeStep, executionSteps]);
 
   const availablePeers = seedAccounts.filter(acc => acc.email !== user?.email);
-  const showPeerMenu = input.toLowerCase().includes('lets chat') && input.includes('@') && !peerChatUser;
+
+  const getMentionQuery = () => {
+    const lastAtIndex = input.lastIndexOf('@');
+    if (lastAtIndex === -1) return null;
+    if (lastAtIndex > 0 && !/\s/.test(input[lastAtIndex - 1])) return null;
+    const query = input.slice(lastAtIndex + 1);
+    if (query.includes(' ') || query.includes('\n')) return null;
+    return query.toLowerCase();
+  };
+
+  const mentionQuery = getMentionQuery();
+  const showMentionMenu = mentionQuery !== null && !peerChatUser;
+
+  const filteredPeers = availablePeers.filter(p => {
+    if (!mentionQuery) return true;
+    return (
+      p.name.toLowerCase().includes(mentionQuery) ||
+      p.email.toLowerCase().includes(mentionQuery) ||
+      (p.role && p.role.toLowerCase().includes(mentionQuery)) ||
+      (p.department && p.department.toLowerCase().includes(mentionQuery))
+    );
+  });
+
+  const selectMentionUser = (peer) => {
+    if (input.toLowerCase().startsWith('lets chat')) {
+      selectPeerUser(peer);
+      return;
+    }
+
+    const lastAtIndex = input.lastIndexOf('@');
+    const beforeAt = input.slice(0, lastAtIndex);
+    const newInput = `${beforeAt}@${peer.name} `;
+    setInput(newInput);
+
+    setSelectedMentions(prev => {
+      if (prev.some(p => p.id === peer.id || p.email === peer.email)) return prev;
+      return [...prev, {
+        id: peer.id,
+        name: peer.name,
+        email: peer.email,
+        role: peer.role,
+        department: peer.department
+      }];
+    });
+
+    inputRef.current?.focus();
+  };
 
   const selectPeerUser = (peer) => {
     // Check real presence status: if offline, AI informs user and prevents fake auto-replies
@@ -244,16 +292,13 @@ function App() {
     } catch(err) { console.log(err); }
   };
 
-  const handleSend = async () => {
-    if (!input.trim() || isLoading) return;
-
-    const userMessage = input.trim();
-
-    // Removed hardcoded frontend interceptors to allow backend AI Agent to handle routing
+  const handleSend = async (overrideMessage = null, overrideConfirmation = null) => {
+    const textToSend = overrideMessage !== null ? overrideMessage : input.trim();
+    if (!textToSend || isLoading) return;
 
     // If live peer-to-peer chat mode is active, transmit over backend feed directly
     if (peerChatUser) {
-      setMessages(prev => [...prev, { role: 'user', text: userMessage, isPeer: true }]);
+      setMessages(prev => [...prev, { role: 'user', text: textToSend, isPeer: true }]);
       setInput('');
 
       fetch(`${API_BASE}/api/chat/peer/send`, {
@@ -264,15 +309,19 @@ function App() {
           sender_name: user.name,
           sender_role: user.role,
           recipient_email: peerChatUser.email,
-          text: userMessage
+          text: textToSend
         })
       }).catch(err => console.log('Failed to broadcast peer message', err));
 
       return;
     }
 
-    setMessages(prev => [...prev, { role: 'user', text: userMessage }]);
-    setInput('');
+    setMessages(prev => [...prev, { role: 'user', text: textToSend }]);
+    if (overrideMessage === null) {
+      setInput('');
+    }
+    const currentMentions = [...selectedMentions];
+    setSelectedMentions([]);
     setIsLoading(true);
     setExecutionSteps([]);
     setCurrentIntent(null);
@@ -291,7 +340,15 @@ function App() {
       const res = await fetch(`${API_BASE}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: userMessage, user_role: user?.role || 'employee' })
+        body: JSON.stringify({
+          message: textToSend,
+          user_role: user?.role || 'employee',
+          user_email: user?.email || '',
+          user_name: user?.name || '',
+          session_id: sessionId,
+          mentioned_users: currentMentions,
+          confirmation: overrideConfirmation
+        })
       });
 
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -307,15 +364,6 @@ function App() {
       // Trigger dynamic UI components based on the intelligent backend intent classification
       if (data.intent === 'leave_request') {
         setShowLeaveForm(true);
-      } else if (data.intent === 'notification' || data.intent === 'meeting_scheduling') {
-        setReminderData({
-          count: 3,
-          meetings: [
-            { title: "Executive Leadership Strategy Alignment", time: "10:00 AM", priority: "High", link: "https://meet.google.com/abc-defg-hij" },
-            { title: "Quarterly OKR Review & Resource Allocation", time: "02:00 PM", priority: "High", link: "https://meet.google.com/xyz-uvwx-rst" },
-            { title: "Engineering Sync", time: "04:30 PM", priority: "Normal", link: "https://meet.google.com/qwe-rtyu-iop" }
-          ]
-        });
       }
 
       setMessages(prev => [...prev, {
@@ -323,8 +371,11 @@ function App() {
         text: data.reply || 'Request processed successfully.',
         intent: data.intent,
         entities: data.entities,
+        pending_confirmation: data.pending_confirmation,
+        meeting_draft: data.meeting_draft,
+        event_link: data.event_link,
+        meet_link: data.meet_link,
       }]);
-
 
     } catch (err) {
       setIsLoading(false);
@@ -334,6 +385,14 @@ function App() {
         role: 'ai',
         text: `⚠️ Error connecting to the AI agent: ${err.message}. Make sure the backend is running on port 8000.`
       }]);
+    }
+  };
+
+  const handleConfirmMeeting = (decision) => {
+    if (decision === 'confirm') {
+      handleSend('Confirm', 'confirm');
+    } else {
+      handleSend('Cancel', 'cancel');
     }
   };
 
@@ -580,10 +639,24 @@ function App() {
               {messages.map((m, i) => (
                 <div key={i} className={`chat-bubble ${m.role} ${m.isPeer ? 'peer-user' : ''}`}>
                   {m.role === 'peer' && (
-                    <div className="peer-badge">
-                      <span className="peer-icon">💬</span> {m.peerName} <span className="peer-role-tag">({m.peerRole})</span>
-                    </div>
-                  )}
+                  <div className="peer-badge">
+                    <span className="peer-icon">💬</span> {m.peerName} <span className="peer-role-tag">({m.peerRole})</span>
+                  </div>
+                )}
+                {/* Render meeting draft summary when present */}
+                {m.meeting_draft && (
+                  <div className="meeting-draft-card">
+                    <h4>🗓️ Meeting Draft</h4>
+                    <p><strong>Title:</strong> {m.meeting_draft.title || '—'}</p>
+                    <p><strong>Participants:</strong> {m.meeting_draft.participants?.map(p => `${p.name} (${p.email})`).join(', ') || '—'}</p>
+                    <p><strong>Date:</strong> {m.meeting_draft.date || '—'}</p>
+                    <p><strong>Time:</strong> {m.meeting_draft.start_time || '—'}</p>
+                    <p><strong>Duration:</strong> {m.meeting_draft.duration_minutes || '30'} min</p>
+                    <p><strong>Time Zone:</strong> {m.meeting_draft.time_zone || 'UTC'}</p>
+                    <p><strong>Calendar Status:</strong> {m.meeting_draft.calendar_available ? '✅ Connected' : '⚠️ Not Connected'}</p>
+                  </div>
+                )}
+
                   {m.intent && intentLabels[m.intent] && (
                     <span
                       className="msg-intent-tag"
@@ -593,6 +666,42 @@ function App() {
                     </span>
                   )}
                   <span dangerouslySetInnerHTML={{ __html: formatMessage(m.text) }} />
+                  {m.pending_confirmation && (
+                    <div className="meeting-confirmation-card">
+                      <div className="confirmation-actions">
+                        <button
+                          type="button"
+                          className="confirm-btn"
+                          onClick={() => handleConfirmMeeting('confirm')}
+                          disabled={isLoading}
+                        >
+                          ✓ Confirm & Schedule Meeting
+                        </button>
+                        <button
+                          type="button"
+                          className="cancel-btn"
+                          onClick={() => handleConfirmMeeting('cancel')}
+                          disabled={isLoading}
+                        >
+                          ✕ Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  {m.event_link && (
+                    <div style={{ marginTop: '8px' }}>
+                      <a href={m.event_link} target="_blank" rel="noreferrer" className="meeting-link">
+                        📅 View in Google Calendar ↗
+                      </a>
+                    </div>
+                  )}
+                  {m.meet_link && (
+                    <div style={{ marginTop: '4px' }}>
+                      <a href={m.meet_link} target="_blank" rel="noreferrer" className="meeting-link" style={{ color: '#22d3ee' }}>
+                        📹 Join Google Meet ↗
+                      </a>
+                    </div>
+                  )}
                 </div>
               ))}
 
@@ -699,18 +808,20 @@ function App() {
             </div>
           </div>
 
-          {/* Interactive Chat Input Area with Live Peer Overlays */}
+          {/* Interactive Chat Input Area with Live Peer & Mention Overlays */}
           <div className="chat-input-wrapper">
-            {/* Peer Auto-Complete Dropdown Menu */}
-            {showPeerMenu && availablePeers.length > 0 && (
+            {/* Mention Auto-Complete Dropdown Menu */}
+            {showMentionMenu && filteredPeers.length > 0 && (
               <div className="peer-menu-overlay">
-                <div className="peer-menu-header">Select Colleague to Live Chat:</div>
+                <div className="peer-menu-header">
+                  {input.toLowerCase().startsWith('lets chat') ? 'Select Colleague to Live Chat:' : 'Select Colleague to Mention & Schedule:'}
+                </div>
                 <div className="peer-menu-list">
-                  {availablePeers.map(peer => (
+                  {filteredPeers.map(peer => (
                     <div
                       key={peer.id}
                       className="peer-menu-item"
-                      onClick={() => selectPeerUser(peer)}
+                      onClick={() => selectMentionUser(peer)}
                     >
                       <div className="peer-item-avatar">{peer.name[0]}</div>
                       <div className="peer-item-info">
@@ -725,11 +836,29 @@ function App() {
                             boxShadow: peer.is_online ? '0 0 6px #10b981' : 'none'
                           }} title={peer.is_online ? "Online" : "Offline"} />
                         </div>
-                        <div className="peer-item-role">{peer.role} • {peer.department}</div>
+                        <div className="peer-item-role">{peer.email} • {peer.role}</div>
                       </div>
                     </div>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {/* Selected Mention Pills above input */}
+            {selectedMentions.length > 0 && (
+              <div className="selected-mentions-bar">
+                <span className="mention-bar-label">Mentioned:</span>
+                {selectedMentions.map(m => (
+                  <span key={m.id || m.email} className="mention-pill">
+                    @{m.name} <span className="mention-email">({m.email})</span>
+                    <button
+                      type="button"
+                      className="remove-mention-btn"
+                      onClick={() => setSelectedMentions(prev => prev.filter(p => p.email !== m.email))}
+                      title="Remove mention"
+                    >✕</button>
+                  </span>
+                ))}
               </div>
             )}
 
@@ -762,8 +891,8 @@ function App() {
                 className={`input-field ${input.length > 0 ? 'typing' : ''}`}
                 id="mainInput"
                 type="text"
-                placeholder={peerChatUser ? `Direct Message @${peerChatUser.name.split(' ')[0]}...` : "Ask anything… (e.g. lets chat @)"}
-                maxLength={200}
+                placeholder={peerChatUser ? `Direct Message @${peerChatUser.name.split(' ')[0]}...` : "Ask anything or type @ to mention colleagues & schedule meetings..."}
+                maxLength={500}
                 autoComplete="off"
                 value={input}
                 onFocus={handleFocus}
@@ -778,7 +907,7 @@ function App() {
               <button
                 className={`btn-send ${input.length > 0 ? 'active' : ''}`}
                 id="sendBtn"
-                onClick={handleSend}
+                onClick={() => handleSend()}
                 disabled={isLoading}
                 aria-label="Send"
               >
@@ -786,7 +915,7 @@ function App() {
               </button>
             </div>
             <div className={`char-counter ${input.length > 0 ? 'visible' : ''}`}>
-              {input.length} / 200
+              {input.length} / 500
             </div>
           </div>
         </div>

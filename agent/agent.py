@@ -15,12 +15,17 @@ Can optionally enhance responses with NVIDIA NIM LLM if an API key is configured
 """
 import json
 import time
+import re
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Optional, List, Dict, Any
 
 from agent.intent import classify_intent, extract_entities
 from agent.workflows import WORKFLOW_MAP, CHAIN_RULES
 from agent.tools import TOOL_REGISTRY
+from agent.meeting_scheduler import MeetingScheduler, SESSION_STORE
+
+# CEO denial constant for easy import
+CEO_DENIAL_MESSAGE = MeetingScheduler.CEO_DENIAL_MESSAGE
 
 # Optional: NVIDIA NIM for enhanced natural-language responses
 try:
@@ -56,12 +61,145 @@ class AgentController:
 
     # ── Public entry point ──────────────────────────────────
 
-    def process_request(self, user_request: str) -> dict:
+    def process_request(
+        self,
+        user_request: str,
+        user_email: Optional[str] = None,
+        user_name: Optional[str] = None,
+        user_role: Optional[str] = "employee",
+        session_id: Optional[str] = "default",
+        mentioned_users: Optional[List[Dict[str, Any]]] = None,
+        confirmation: Optional[str] = None
+    ) -> dict:
         """Entry-point called by the /api/chat route."""
         start = time.time()
 
         # Step 1: Understand
         understanding = self._understand(user_request)
+        intent = understanding["intent"]
+
+        # Check for active multi-turn meeting scheduling session or meeting intent
+        active_session = SESSION_STORE.get(session_id or "default")
+        has_pending_meeting = active_session and active_session.state in ("collecting_details", "awaiting_confirmation")
+        is_meeting_intent = (intent == "meeting_scheduling") or (mentioned_users and len(mentioned_users) > 0)
+        is_confirmation = confirmation in ("confirm", "cancel") or (
+            has_pending_meeting and user_request.lower().strip() in ("confirm", "yes", "proceed", "cancel", "no", "abort")
+        )
+
+        is_meeting_followup = False
+        if has_pending_meeting and intent in ("meeting_scheduling", "general"):
+            if is_confirmation:
+                is_meeting_followup = True
+            else:
+                extracted = MeetingScheduler.extract_meeting_details(user_request, active_session)
+                if any(k in extracted for k in ("date_str", "time_str", "duration_minutes", "time_zone")):
+                    is_meeting_followup = True
+                elif active_session.state == "collecting_details" and not active_session.title:
+                    if not any(w in user_request.lower() for w in ("password", "access", "jira", "github", "ticket", "health", "leave", "help", "diagnostics")):
+                        is_meeting_followup = True
+
+        if is_meeting_intent or is_confirmation or is_meeting_followup:
+            # CEO authorization check for scheduling
+            auth = MeetingScheduler.check_ceo_authorization(user_email, user_role)
+            if not auth["authorized"]:
+                elapsed = time.time() - start
+                denial_res = {
+                    "status": "error",
+                    "intent": "meeting_scheduling",
+                    "entities": understanding["entities"],
+                    "steps": ["🔒 Authorization check: user is not CEO", "❌ Meeting scheduling denied"],
+                    "result": CEO_DENIAL_MESSAGE,
+                    "tool_outputs": {},
+                    "execution_time": round(elapsed, 3),
+                    "message": CEO_DENIAL_MESSAGE,
+                    "steps_executed": ["🔒 Authorization check: user is not CEO", "❌ Meeting scheduling denied"],
+                }
+                self._log_execution(user_request, denial_res)
+                return denial_res
+
+            sched_res = MeetingScheduler.handle_scheduling_turn(
+                user_message=user_request,
+                session_id=session_id or "default",
+                user_email=user_email,
+                user_name=user_name,
+                mentioned_users=mentioned_users,
+                confirmation=confirmation
+            )
+            elapsed = time.time() - start
+            sched_res["execution_time"] = round(elapsed, 3)
+            sched_res["message"] = sched_res.get("result", "")
+            sched_res["steps_executed"] = sched_res.get("steps", [])
+            sched_res["entities"] = understanding["entities"]
+            self._log_execution(user_request, sched_res)
+            return sched_res
+
+        # Meeting query handling (no CEO restriction for viewing)
+        if intent == "meeting_query":
+            query_res = MeetingScheduler.query_user_meetings(
+                user_email=user_email,
+                user_role=user_role,
+                query_text=user_request
+            )
+            elapsed = time.time() - start
+            query_res["execution_time"] = round(elapsed, 3)
+            query_res["message"] = query_res.get("result", "")
+            query_res["steps_executed"] = query_res.get("steps", [])
+            query_res["entities"] = understanding["entities"]
+            self._log_execution(user_request, query_res)
+            return query_res
+
+        # Meeting cancel handling (CEO only)
+        if intent == "meeting_cancel":
+            # Extract title keyword from text
+            title_kw = re.sub(
+                r"(?i)(cancel|delete|remove)\s+(?:the\s+|my\s+)?(?:meeting\s+)?",
+                "", user_request
+            ).strip().strip("'\"")
+            if not title_kw:
+                title_kw = "meeting"
+            cancel_res = MeetingScheduler.cancel_meeting_by_title(
+                title_keyword=title_kw,
+                user_email=user_email,
+                user_role=user_role
+            )
+            elapsed = time.time() - start
+            cancel_res["execution_time"] = round(elapsed, 3)
+            cancel_res["message"] = cancel_res.get("result", "")
+            cancel_res["steps_executed"] = cancel_res.get("steps", [])
+            cancel_res["entities"] = understanding["entities"]
+            self._log_execution(user_request, cancel_res)
+            return cancel_res
+
+        # Meeting reschedule handling (CEO only)
+        if intent == "meeting_reschedule":
+            # Extract title keyword and new date/time
+            details = MeetingScheduler.extract_meeting_details(user_request)
+            title_kw = re.sub(
+                r"(?i)(reschedule|move|change|postpone)\s+(?:the\s+|my\s+)?(?:meeting\s+)?",
+                "", user_request
+            ).strip().split(" to ")[0].strip().strip("'\"")
+            if not title_kw:
+                title_kw = "meeting"
+            reschedule_res = MeetingScheduler.reschedule_meeting(
+                title_keyword=title_kw,
+                new_date=details.get("date_str"),
+                new_time=details.get("time_str"),
+                user_email=user_email,
+                user_role=user_role
+            )
+            elapsed = time.time() - start
+            reschedule_res["execution_time"] = round(elapsed, 3)
+            reschedule_res["message"] = reschedule_res.get("result", "")
+            reschedule_res["steps_executed"] = reschedule_res.get("steps", [])
+            reschedule_res["entities"] = understanding["entities"]
+            self._log_execution(user_request, reschedule_res)
+            return reschedule_res
+
+        # If general conversational query (not matching rigid automations)
+        if intent == "general":
+            general_res = self._respond_to_general(user_request, user_name, user_role, time.time() - start)
+            self._log_execution(user_request, general_res)
+            return general_res
 
         # Step 2: Plan
         plan = self._plan(understanding)
@@ -76,6 +214,102 @@ class AgentController:
         self._log_execution(user_request, response)
 
         return response
+
+    def _respond_to_general(
+        self,
+        user_request: str,
+        user_name: Optional[str] = None,
+        user_role: Optional[str] = "employee",
+        elapsed: float = 0.0
+    ) -> dict:
+        """Generate a contextual, non-repetitive response to general conversation or queries."""
+        lower = user_request.lower().strip()
+        name_display = f" {user_name}" if user_name else ""
+
+        # Optional LLM call if configured
+        if self.llm:
+            try:
+                llm_resp = self.llm.chat.completions.create(
+                    model=self.model,
+                    messages=[
+                        {
+                            "role": "system",
+                            "content": (
+                                f"You are ExecuAI, an enterprise AI assistant for enterprise teams. "
+                                f"The user is{name_display} ({user_role or 'employee'}). "
+                                "Be concise, helpful, professional, and knowledgeable. "
+                                "ExecuAI can schedule meetings with @mentions, manage leave requests, "
+                                "handle IT provisioning and tickets, and check system health."
+                            )
+                        },
+                        {"role": "user", "content": user_request}
+                    ],
+                    max_tokens=200,
+                    temperature=0.3
+                )
+                res_text = llm_resp.choices[0].message.content.strip()
+                return {
+                    "status": "success",
+                    "intent": "general",
+                    "entities": {},
+                    "steps": ["🧠 Processed query with ExecuAI intelligence"],
+                    "result": res_text,
+                    "tool_outputs": {},
+                    "execution_time": round(elapsed, 3),
+                    "message": res_text,
+                    "steps_executed": ["🧠 Processed query with ExecuAI intelligence"]
+                }
+            except Exception:
+                pass
+
+        # Context-aware rule-based conversational responses
+        if any(g in lower for g in ("hello", "hi", "hey", "good morning", "good afternoon", "good evening")):
+            reply = (
+                f"Hello{name_display}! 👋 How can I assist you today?\n\n"
+                f"Here are a few things you can do:\n"
+                f"• **Schedule a Meeting**: Type e.g. `Schedule meeting with @colleague tomorrow at 3pm`\n"
+                f"• **Apply for Leave**: Type `I need casual leave tomorrow` or `Check leave applications`\n"
+                f"• **IT Services**: Request access (e.g. `Grant access to GitHub`) or report an issue\n"
+                f"• **Diagnostics**: Ask `Check system health`"
+            )
+        elif any(c in lower for c in ("what can you do", "help", "who are you", "features", "capabilities", "commands", "options")):
+            reply = (
+                f"I am **ExecuAI** — your Enterprise Assistant.\n\n"
+                f"**Available Capabilities:**\n"
+                f"1. 📅 **Meeting Scheduling with @Mentions**: Select colleagues via @ mentions, check Google Calendar availability and detect conflicts honestly, verify all participants, and confirm before scheduling.\n"
+                f"2. 📋 **Leave Automation**: File leave applications, check allowance balances, and manage HR reviews.\n"
+                f"3. 💻 **IT Provisioning**: Setup accounts across email, Slack, GitHub, and Jira.\n"
+                f"4. 🎟️ **IT Support Tickets**: Log and triage technical problems.\n"
+                f"5. 📊 **Workforce Insights**: Run attrition risk predictions and view team stats.\n"
+                f"6. 🛠️ **System Health Diagnostics**: Verify database, API, and service availability."
+            )
+        elif any(th in lower for th in ("thanks", "thank you", "thx", "appreciate it")):
+            reply = f"You're very welcome{name_display}! Let me know if you need any other assistance."
+        elif any(s in lower for s in ("how to schedule", "how do i schedule", "calendar")):
+            reply = (
+                "To schedule a meeting:\n"
+                "1. Type **@** in the chat input and select your colleague from the dropdown suggestions.\n"
+                "2. Provide meeting details, for example:\n"
+                "   `Schedule a Sprint Review with @Alice tomorrow at 2:00 PM UTC for 30 minutes`\n"
+                "3. I will verify their contact info, check Google Calendar and internal availability, report any conflicts, and ask you to confirm before sending invitations."
+            )
+        else:
+            reply = (
+                f"I understood: *\"{user_request}\"*.\n\n"
+                "How would you like to proceed? You can schedule a meeting with colleagues using `@mention`, submit a leave request, or ask for system assistance."
+            )
+
+        return {
+            "status": "success",
+            "intent": "general",
+            "entities": {},
+            "steps": ["💬 Handled conversational response"],
+            "result": reply,
+            "tool_outputs": {},
+            "execution_time": round(elapsed, 3),
+            "message": reply,
+            "steps_executed": ["💬 Handled conversational response"]
+        }
 
     # Also expose the simple `agent()` function signature
     def agent(self, user_input: str) -> dict:

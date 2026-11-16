@@ -64,7 +64,14 @@ class Meeting(Base):
     scheduled_at = Column(DateTime, nullable=False)
     duration_minutes = Column(Integer, default=30)
     description = Column(Text, default="")
+    attendees_json = Column(Text, default="[]")
+    meet_link = Column(String(500), nullable=True)
+    calendar_event_id = Column(String(200), nullable=True)
+    status = Column(String(20), default="scheduled")  # scheduled | rescheduled | cancelled
+    notification_status = Column(Text, default="")
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    organizer = relationship("Employee")
 
 
 class ExecutionLog(Base):

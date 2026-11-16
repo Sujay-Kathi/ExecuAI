@@ -68,6 +68,7 @@ def list_employees_auth(db: Session = Depends(get_db)):
             Employee(name="Sujay Kathi", email="sujaykathi25csds@rnsit.ac.in", role="CEO & Lead Architect", department="Executive", password_hash=default_pwd_hash),
             Employee(name="Rahul Kumar", email="rahul@enterprise.com", role="Senior Software Engineer", department="Engineering", password_hash=default_pwd_hash),
             Employee(name="Roshni", email="br.roshni0031@gmail.com", role="Product Manager", department="Product", password_hash=default_pwd_hash),
+            Employee(name="Swati", email="swati@enterprise.com", role="Full Stack Engineer", department="Engineering", password_hash=default_pwd_hash),
             Employee(name="John Doe", email="john.doe@enterprise.com", role="IT Administrator", department="IT Operations", password_hash=default_pwd_hash),
             Employee(name="Alice Wang", email="alice.wang@enterprise.com", role="HR Specialist", department="Human Resources", password_hash=default_pwd_hash),
             Employee(name="Bob Smith", email="bob.smith@enterprise.com", role="DevOps Engineer", department="Engineering", password_hash=default_pwd_hash),

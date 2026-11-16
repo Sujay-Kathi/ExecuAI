@@ -22,6 +22,11 @@ agent = AgentController()
 class ChatRequest(BaseModel):
     message: str
     user_role: Optional[str] = "employee"
+    user_email: Optional[str] = None
+    user_name: Optional[str] = None
+    session_id: Optional[str] = "default"
+    mentioned_users: Optional[List[Dict[str, Any]]] = None
+    confirmation: Optional[str] = None
 
 
 class ChatResponse(BaseModel):
@@ -31,6 +36,11 @@ class ChatResponse(BaseModel):
     entities: dict = {}
     tool_outputs: dict = {}
     execution_time: float = 0.0
+    pending_confirmation: bool = False
+    meeting_draft: Optional[Dict[str, Any]] = None
+    missing_details: Optional[List[str]] = None
+    event_link: Optional[str] = None
+    meet_link: Optional[str] = None
 
 
 class PeerMessagePayload(BaseModel):
@@ -50,9 +60,17 @@ def chat(payload: ChatRequest):
     """
     Main chat endpoint.
     Receives a natural-language request and returns the agent's response
-    along with a detailed execution log.
+    along with a detailed execution log and multi-turn meeting context.
     """
-    result = agent.process_request(payload.message)
+    result = agent.process_request(
+        user_request=payload.message,
+        user_email=payload.user_email,
+        user_name=payload.user_name,
+        user_role=payload.user_role,
+        session_id=payload.session_id or "default",
+        mentioned_users=payload.mentioned_users,
+        confirmation=payload.confirmation,
+    )
 
     return ChatResponse(
         reply=result.get("result", result.get("message", "Request processed.")),
@@ -61,6 +79,11 @@ def chat(payload: ChatRequest):
         entities=result.get("entities", {}),
         tool_outputs=result.get("tool_outputs", {}),
         execution_time=result.get("execution_time", 0.0),
+        pending_confirmation=result.get("pending_confirmation", False),
+        meeting_draft=result.get("meeting_draft"),
+        missing_details=result.get("missing_details"),
+        event_link=result.get("event_link"),
+        meet_link=result.get("meet_link"),
     )
 
 

@@ -50,10 +50,29 @@ INTENT_TRIGGERS = [
         "leave", "day off", "time off", "vacation", "sick leave",
         "casual leave", "earned leave", "pto",
     ]),
+    ("meeting_query",        [
+        "what are my meetings", "show my meetings", "my meetings today",
+        "meetings today", "meetings tomorrow", "meetings this week",
+        "upcoming meetings", "show upcoming meetings", "next meeting",
+        "when is my meeting", "when is the next meeting", "when is my next",
+        "what meetings", "show meetings", "meeting schedule",
+        "who is attending", "who is invited", "meeting details",
+        "show today's meetings", "today's meetings",
+    ]),
+    ("meeting_cancel",       [
+        "cancel meeting", "cancel the meeting", "cancel my meeting",
+        "delete meeting", "remove meeting",
+    ]),
+    ("meeting_reschedule",   [
+        "reschedule meeting", "reschedule the meeting", "move meeting",
+        "change meeting time", "postpone meeting",
+    ]),
     ("meeting_scheduling",   [
-        "schedule meeting", "book meeting", "set up meeting",
-        "arrange meeting", "create meeting", "meeting with",
-        "schedule call", "book call",
+        "schedule a meeting", "schedule meeting", "book a meeting", "book meeting",
+        "set up a meeting", "set up meeting", "arrange meeting", "create meeting",
+        "meeting with", "schedule a call", "schedule call", "book a call", "book call",
+        "set up a call", "sync with", "meet with", "schedule sync", "plan meeting",
+        "schedule discussion", "schedule a sync", "set up sync",
     ]),
     ("it_ticket",            [
         "not working", "broken", "issue", "bug", "ticket",
@@ -142,6 +161,19 @@ def classify_intent(text: str) -> str:
     Return the best-matching intent string, or 'general' if no match.
     """
     lower = text.lower().strip()
+
+    # Direct conversational / confirmation checks to prevent false triggers
+    if lower in ("confirm", "yes", "cancel", "no", "abort", "proceed", "thanks", "thank you"):
+        return "general"
+
+    # Inquiries about instructions or capabilities should remain conversational general
+    if any(q in lower for q in ("how to", "how do i", "how can i", "what can you", "who are you", "what are your features")):
+        return "general"
+
+    # Check for @mention combined with meeting keywords
+    if "@" in text and any(w in lower for w in ("meet", "meeting", "sync", "call", "schedule", "catch up", "discussion")):
+        return "meeting_scheduling"
+
     for intent, triggers in INTENT_TRIGGERS:
         for trigger in triggers:
             if trigger in lower:

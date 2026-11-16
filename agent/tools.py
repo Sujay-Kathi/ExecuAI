@@ -286,18 +286,25 @@ def validate_access_eligibility(name: str, system: str) -> dict:
 # Meeting & Calendar Tools
 # ────────────────────────────────────────────────────────────
 
-def schedule_meeting(title: str, organizer: str = "System", attendees: list[str] = None) -> dict:
+def schedule_meeting(
+    title: str,
+    organizer: str = "System",
+    attendees: list[str] = None,
+    start_time: datetime = None,
+    duration_minutes: int = 30,
+    time_zone: str = "UTC"
+) -> dict:
     """Schedule a meeting — tries Google Calendar first, then DB fallback."""
     from agent.integrations import create_real_calendar_event
 
-    meeting_time = datetime.now(timezone.utc) + timedelta(days=random.randint(1, 5))
+    meeting_time = start_time or (datetime.now(timezone.utc) + timedelta(days=random.randint(1, 5)))
 
     # Try real Google Calendar
     gcal = create_real_calendar_event(
         title=title,
         description=f"Scheduled by {organizer} via ExecuAI",
         start_time=meeting_time,
-        duration_minutes=30,
+        duration_minutes=duration_minutes,
         attendees=attendees,
     )
 
@@ -314,7 +321,7 @@ def schedule_meeting(title: str, organizer: str = "System", attendees: list[str]
             title=title,
             organizer_id=org_id,
             scheduled_at=meeting_time,
-            duration_minutes=30,
+            duration_minutes=duration_minutes,
             description=f"Scheduled by {organizer}",
         )
         db.add(meeting)
@@ -330,6 +337,7 @@ def schedule_meeting(title: str, organizer: str = "System", attendees: list[str]
         "title": title,
         "scheduled_at": meeting_time.isoformat(),
         "organizer": organizer,
+        "duration_minutes": duration_minutes,
         "real_calendar": gcal is not None,
     }
     if meeting_id:
@@ -338,14 +346,16 @@ def schedule_meeting(title: str, organizer: str = "System", attendees: list[str]
         result["calendar_link"] = gcal.get("link", "")
         if gcal.get("meet_link"):
             result["meet_link"] = gcal.get("meet_link")
+        result["calendar_status"] = "Created via Google Calendar API"
     else:
-        import uuid
-        result["calendar_link"] = "https://calendar.google.com/simulated"
-        result["meet_link"] = f"https://meet.google.com/simulated-{uuid.uuid4().hex[:8]}"
+        result["calendar_link"] = None
+        result["meet_link"] = None
+        result["calendar_status"] = "Google Calendar credentials not configured or API unavailable"
 
     if attendees:
         meet_info = f"\nGoogle Meet Link: {result.get('meet_link')}" if result.get('meet_link') else ""
-        body = f"You have been invited to a meeting: {title}\nTime: {meeting_time.strftime('%Y-%m-%d %H:%M UTC')}\nOrganizer: {organizer}{meet_info}"
+        cal_info = f"\nGoogle Calendar Link: {result.get('calendar_link')}" if result.get('calendar_link') else ""
+        body = f"You have been invited to a meeting: {title}\nTime: {meeting_time.strftime('%Y-%m-%d %H:%M UTC')}\nOrganizer: {organizer}{cal_info}{meet_info}"
         result["email_status"] = {}
         for attendee in attendees:
             email_res = send_notification_email(
@@ -358,29 +368,52 @@ def schedule_meeting(title: str, organizer: str = "System", attendees: list[str]
     return result
 
 
-def check_availability(name: str) -> dict:
-    """Check calendar availability — tries Google Calendar freebusy first."""
+def check_availability(name: str = "Organizer", start_time: datetime = None, duration_minutes: int = 30) -> dict:
+    """Check calendar availability — queries Google Calendar freebusy and local DB."""
     from agent.integrations import check_real_availability
+    from backend.database import SessionLocal
+    from backend.models import Meeting
 
-    real = check_real_availability()
+    conflicts = []
+    gcal_connected = False
+
+    time_min = start_time or datetime.now(timezone.utc)
+    time_max = time_min + timedelta(minutes=duration_minutes)
+
+    real = check_real_availability(time_min=time_min, time_max=time_max)
     if real:
-        return {
-            "tool": "check_availability",
-            "status": "success",
-            "name": name,
-            "busy_slots": real["busy_slots"],
-            "method": "Google Calendar API",
-        }
+        gcal_connected = True
+        busy = real.get("busy", [])
+        if busy:
+            for b in busy:
+                conflicts.append(f"Google Calendar conflict: busy {b.get('start')} to {b.get('end')}")
+
+    # Check local DB meetings
+    try:
+        db = SessionLocal()
+        overlap = db.query(Meeting).filter(
+            Meeting.scheduled_at < time_max,
+            (Meeting.scheduled_at + timedelta(minutes=30)) > time_min
+        ).all()
+        for m in overlap:
+            conflicts.append(f"Internal calendar conflict: '{m.title}' at {m.scheduled_at.strftime('%Y-%m-%d %H:%M UTC')}")
+        db.close()
+    except Exception:
+        pass
 
     return {
         "tool": "check_availability",
         "status": "success",
         "name": name,
+        "gcal_connected": gcal_connected,
+        "conflicts": conflicts,
+        "conflicts_found": len(conflicts),
+        "available": len(conflicts) == 0,
         "available_slots": [
             "Tomorrow 10:00 AM - 11:00 AM",
             "Tomorrow 2:00 PM - 3:00 PM",
             "Day after 9:00 AM - 10:00 AM",
-        ],
+        ] if len(conflicts) == 0 else []
     }
 
 
